@@ -64,7 +64,7 @@ class PiglinBartering : Sequence {
 
     private fun getPotion(type: String, effect: String): ItemStack {
         return when (type to effect) {
-            "spash" to "fire" -> {
+            "splash" to "fire" -> {
                 val stack = ItemStack(Items.SPLASH_POTION)
                 stack.set(DataComponents.POTION_CONTENTS, PotionContents(Potions.FIRE_RESISTANCE))
                 stack
