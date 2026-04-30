@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "chiyoko",
+  "version": "${version}",
+  "name": "chiyoko",
+  "description": "Reveals the next outcome for certain loot tables before they happen by simulating the exact steps the game takes to advance RNG.",
+  "authors": ["sleepyfaith"],
+  "contact": {},
+  "license": "All-Rights-Reserved",
+  "icon": "assets/chiyoko/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "lgbt.faith.chiyoko.Chiyoko"
+    ]
+  },
+  "mixins": [
+    "chiyoko.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-language-kotlin": ">=${kotlin_loader_version}",
+    "fabric-api": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}

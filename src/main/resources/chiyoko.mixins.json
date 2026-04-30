@@ -1,0 +1,22 @@
+{
+  "required": true,
+  "package": "lgbt.faith.chiyoko.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "GuiMixin",
+    "PauseScreenMixin",
+    "ScreenAccessor",
+
+    "PiglinAiMixin",
+    "LivingEntityMixin",
+    "EntityMixin",
+    "FishingHookMixin",
+    "BlockMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "overwrites": {
+    "requireAnnotations": true
+  }
+}
