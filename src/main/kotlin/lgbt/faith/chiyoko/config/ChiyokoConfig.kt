@@ -92,24 +92,26 @@ class ChiyokoConfigManager {
             save()
         }
     }
-    fun updateSequence(worldName: String, worldSeed: Long, xoroshiro: Xoroshiro128PlusPlus, sequenceName: String) {
-        val world = config.worlds[worldName] ?: return
-        val sequences = world.sequences
+    fun updateSequence(
+        worldName: String,
+        worldSeed: Long,
+        xoroshiro: Xoroshiro128PlusPlus,
+        sequenceName: String,
+        advanceBy: Long = 1
+    ) {
+        val world = config.worlds.getOrPut(worldName) { WorldData(worldSeed) }
 
         world.worldSeed = worldSeed
 
-        sequences[sequenceName] = SequenceData(
-            seedLo = xoroshiro.seedLo,
-            seedHi = xoroshiro.seedHi
-        )
-        save()
-    }
-    fun advanceSequence(worldName: String, sequenceName: String, amount: Long = 1) {
-        val world = config.worlds[worldName] ?: return
-        val sequence = world.sequences[sequenceName] ?: return
-        sequence.advances += amount
-        save()
-    }
+        val existing = world.sequences[sequenceName]
 
+        world.sequences[sequenceName] = SequenceData(
+            seedLo = xoroshiro.seedLo,
+            seedHi = xoroshiro.seedHi,
+            advances = (existing?.advances ?: 0) + advanceBy
+        )
+
+        save()
+    }
 
 }

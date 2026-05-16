@@ -6,6 +6,7 @@ import lgbt.faith.chiyoko.keys
 import lgbt.faith.chiyoko.sequences.Fishing
 import lgbt.faith.chiyoko.sequences.Gravel
 import lgbt.faith.chiyoko.sequences.PiglinBartering
+import lgbt.faith.chiyoko.sequences.Vault
 import lgbt.faith.chiyoko.sequences.WitherSkeleton
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
@@ -74,6 +75,7 @@ class ChiyokoRenderer {
             val y = gridToPixel(pos.gridY)
 
             val itemList = when (sequence) {
+                is Vault -> sequence.roll(overlay.advances)
                 is PiglinBartering -> sequence.roll(overlay.advances)
                 is WitherSkeleton -> {
                     val drops = sequence.roll(overlay.rollType, true, lootingLevel)

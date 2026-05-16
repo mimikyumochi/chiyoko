@@ -2,6 +2,7 @@ package lgbt.faith.chiyoko.mixin
 
 import lgbt.faith.chiyoko.Chiyoko
 import lgbt.faith.chiyoko.DropCapture
+import lgbt.faith.chiyoko.isMatchingSeed
 import lgbt.faith.chiyoko.rand.Xoroshiro128PlusPlus
 import net.minecraft.client.Minecraft
 import net.minecraft.core.registries.Registries
@@ -74,12 +75,11 @@ class LivingEntityMixin {
 
             val actualDrops = DropCapture.pendingDrops.remove(entity.id)?.filter { it.item != Items.AIR } ?: return
 
-            if(!matchesPrediction(actualDrops, predictedDrops)) {
+            if(!matchesPrediction(actualDrops, predictedDrops) && isMatchingSeed()) {
                 val result = findMatchingState(witherSkeleton, actualDrops, looting=looting)
                 if (result != null) {
                     val (found, advancements) = result
-                    configManager.updateSequence(Chiyoko.worldName, Chiyoko.seed, found, witherSkeleton.key)
-                    configManager.advanceSequence(Chiyoko.worldName, witherSkeleton.key, advancements.toLong())
+                    configManager.updateSequence(Chiyoko.worldName, Chiyoko.seed, found, witherSkeleton.key, advancements.toLong())
 
                     val mc = Minecraft.getInstance()
                     mc.execute {

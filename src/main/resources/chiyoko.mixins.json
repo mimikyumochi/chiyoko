@@ -6,12 +6,15 @@
     "GuiMixin",
     "PauseScreenMixin",
     "ScreenAccessor",
+    "BiomeManagerAccessor",
 
     "PiglinAiMixin",
     "LivingEntityMixin",
     "EntityMixin",
     "FishingHookMixin",
-    "BlockMixin"
+    "BlockMixin",
+    "MultiPlayerGameModeMixin",
+    "MinecraftMixin"
   ],
   "injectors": {
     "defaultRequire": 1

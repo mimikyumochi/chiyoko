@@ -2,18 +2,13 @@ package lgbt.faith.chiyoko.sequences
 
 import lgbt.faith.chiyoko.rand.RandomSupport
 import lgbt.faith.chiyoko.rand.Xoroshiro128PlusPlus
-import net.minecraft.client.Minecraft
-import net.minecraft.core.Holder
+import lgbt.faith.chiyoko.functions.*
 import net.minecraft.core.component.DataComponents
-import net.minecraft.core.registries.Registries
-import net.minecraft.tags.EnchantmentTags
 import net.minecraft.util.Mth
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
 import net.minecraft.world.item.alchemy.PotionContents
 import net.minecraft.world.item.alchemy.Potions
-import net.minecraft.world.item.enchantment.Enchantment
-import net.minecraft.world.item.enchantment.EnchantmentInstance
 import net.minecraft.world.item.enchantment.ItemEnchantments
 
 class Fishing : Sequence {
@@ -32,19 +27,17 @@ class Fishing : Sequence {
     }
 
     fun advance(amount: Int, luck: Int, isOpenWater: Boolean, isJungle: Boolean) {
-        val rng = xoroshiro
-
         repeat(amount) {
-            val table = getLootTable(rng, luck, isOpenWater)
+            val table = getLootTable(xoroshiro, luck, isOpenWater)
             val pool = when (table) {
                 LootTable.FISH -> fishTable()
                 LootTable.JUNK -> junkTable(isJungle)
                 LootTable.TREASURE -> treasureTable()
                 null -> return@repeat
             }.filter { it.item.item != Items.AIR }
-            val roll = rng.nextInt(pool.last().end)
+            val roll = xoroshiro.nextInt(pool.last().end)
             val itemStack = pool.first { roll in it.start until it.end }.item
-            applyFunctions(rng, itemStack, table)
+            applyFunctions(xoroshiro, itemStack, table)
 
         }
     }
@@ -88,7 +81,7 @@ class Fishing : Sequence {
         Entry(ItemStack(Items.LEATHER_BOOTS), 17, 27),
         Entry(ItemStack(Items.LEATHER), 27, 37),
         Entry(ItemStack(Items.BONE), 37, 47),
-        Entry(getWaterBottle(), 47, 57),
+        Entry(ItemStack(Items.POTION).apply { set(DataComponents.POTION_CONTENTS, PotionContents(Potions.WATER)) }, 47, 57),
         Entry(ItemStack(Items.STRING), 57, 62),
         Entry(ItemStack(Items.FISHING_ROD), 62, 64),
         Entry(ItemStack(Items.BOWL), 64, 74),
@@ -107,11 +100,6 @@ class Fishing : Sequence {
         Entry(ItemStack(Items.ENCHANTED_BOOK), 4, 5),
         Entry(ItemStack(Items.NAUTILUS_SHELL), 5, 6)
     )
-    private fun getWaterBottle(): ItemStack {
-        val stack = ItemStack(Items.POTION)
-        stack.set(DataComponents.POTION_CONTENTS, PotionContents(Potions.WATER))
-        return stack
-    }
 
     fun roll(amount: Int, luck: Int = 0, isOpenWater: Boolean = true, isJungle: Boolean = false): List<ItemStack> {
         val catches = mutableListOf<ItemStack>()
@@ -145,111 +133,31 @@ class Fishing : Sequence {
         if (table == LootTable.JUNK) {
             when (stack.item) {
                 Items.LEATHER_BOOTS,
-                Items.FISHING_ROD -> applyDamage(rng, stack, 0.9f)
+                Items.FISHING_ROD -> stack.damageValue = Mth.floor((1f - ItemFunctions.applyDamage(rng, 0f, 0.9f)) * stack.maxDamage)
             }
         }
         else if (table == LootTable.TREASURE) {
             when (stack.item) {
                 Items.BOW -> {
-                    applyDamage(rng, stack, 0.25f)
-                    val enchants = applyEnchant(rng, stack)
+                    stack.damageValue = Mth.floor((1f - ItemFunctions.applyDamage(rng, 0f, 0.25f)) * stack.maxDamage)
+                    val enchants = EnchantFunctions.enchantWithLevels(rng, stack, 30)
                     enchants.forEach { stack.enchant(it.enchantment, it.level) }
                 }
 
                 Items.ENCHANTED_BOOK -> {
-                    val enchants = applyEnchant(rng, stack)
+                    val enchants = EnchantFunctions.enchantWithLevels(rng, stack, 30)
                     val stored = ItemEnchantments.Mutable(ItemEnchantments.EMPTY)
                     enchants.forEach { stored.set(it.enchantment, it.level) }
                     stack.set(DataComponents.STORED_ENCHANTMENTS, stored.toImmutable())
                 }
 
                 Items.FISHING_ROD -> {
-                    applyDamage(rng, stack, 0.25f)
-                    val enchants = applyEnchant(rng, stack)
+                    stack.damageValue = Mth.floor((1f - ItemFunctions.applyDamage(rng, 0f, 0.25f)) * stack.maxDamage)
+                    val enchants = EnchantFunctions.enchantWithLevels(rng, stack, 30)
                     enchants.forEach { stack.enchant(it.enchantment, it.level) }
                 }
             }
         }
 
     }
-
-    private fun applyDamage(rng: Xoroshiro128PlusPlus, stack: ItemStack, max: Float) {
-        val pct = 1f - (rng.nextFloat() * max).coerceIn(0f, 1f)
-        stack.damageValue = Mth.floor(pct * stack.maxDamage)
-    }
-
-    fun applyEnchant(rng: Xoroshiro128PlusPlus, stack: ItemStack, baseCost: Int = 30): List<EnchantmentInstance> {
-        val mc = Minecraft.getInstance()
-        val registries = mc.player?.level()?.registryAccess() ?: return emptyList()
-        val results = mutableListOf<EnchantmentInstance>()
-
-        val enchantStream = registries.lookupOrThrow(Registries.ENCHANTMENT)
-            .getOrThrow(EnchantmentTags.ON_RANDOM_LOOT)
-            .stream()
-            .toList()
-
-
-        val isBook = stack.`is`(Items.ENCHANTED_BOOK)
-        val lookupStack = if (isBook) ItemStack(Items.BOOK) else stack
-
-        val enchantable = lookupStack.get(DataComponents.ENCHANTABLE) ?: return results
-
-        var cost = baseCost + (1 + rng.nextInt(enchantable.value / 4 + 1) + rng.nextInt(enchantable.value / 4 + 1))
-
-        val randomSpan = (rng.nextFloat() + rng.nextFloat() - 1.0f) * 0.15f
-
-        cost = Mth.clamp(Math.round(cost + cost * randomSpan), 1, Int.MAX_VALUE)
-
-        val available = getAvailableEnchantments(cost, lookupStack, enchantStream).toMutableList()
-
-        if (available.isNotEmpty()) {
-            val first = weightedPick(rng, available)
-            results.add(first)
-
-            while (rng.nextInt(50) <= cost) {
-                if (!results.isEmpty()) filterCompatible(available, results.last())
-                if (available.isEmpty()) break
-
-                val next = weightedPick(rng, available)
-                results.add(next)
-                cost /= 2
-            }
-        }
-
-        return results
-    }
-
-    private fun getAvailableEnchantments(
-        cost: Int,
-        fakeStack: ItemStack,
-        source: List<Holder<Enchantment>>
-    ): List<EnchantmentInstance> {
-        val isBook = fakeStack.`is`(Items.BOOK)
-        return source
-            .filter { holder -> holder.value().isPrimaryItem(fakeStack) || isBook }
-            .mapNotNull { holder ->
-                val enchant = holder.value()
-                (enchant.maxLevel downTo enchant.minLevel)
-                    .firstOrNull { level -> cost >= enchant.getMinCost(level) && cost <= enchant.getMaxCost(level) }
-                    ?.let { level -> EnchantmentInstance(holder, level) }
-            }
-
-    }
-
-    private fun weightedPick(rng: Xoroshiro128PlusPlus, list: List<EnchantmentInstance>): EnchantmentInstance {
-
-        val total = list.sumOf { it.enchantment.value().weight }
-        val roll = rng.nextInt(total)
-        var acc = 0
-        for (e in list) {
-            acc += e.enchantment.value().weight
-            if (roll < acc) return e
-        }
-        error("unreachable")
-    }
-
-    private fun filterCompatible(list: MutableList<EnchantmentInstance>, last: EnchantmentInstance) {
-        list.removeIf { e -> !Enchantment.areCompatible(last.enchantment, e.enchantment) }
-    }
-
 }

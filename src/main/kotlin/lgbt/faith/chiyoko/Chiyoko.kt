@@ -5,25 +5,25 @@ import lgbt.faith.chiyoko.rand.RandomSupport
 import lgbt.faith.chiyoko.sequences.Fishing
 import lgbt.faith.chiyoko.sequences.Gravel
 import lgbt.faith.chiyoko.sequences.PiglinBartering
+import lgbt.faith.chiyoko.sequences.Vault
 import lgbt.faith.chiyoko.sequences.WitherSkeleton
 import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
 import net.minecraft.client.Minecraft
-import net.minecraft.world.item.ItemStack
 import net.minecraft.world.level.storage.LevelResource
 import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.collections.iterator
 import kotlin.io.path.name
 
-object DropCapture {
-    val pendingDrops = mutableMapOf<Int, MutableList<ItemStack>>()
-}
+
 
 val keys = listOf(
+    "minecraft:chests/trial_chambers/reward_ominous",
+    "minecraft:chests/trial_chambers/reward",
     "minecraft:gameplay/piglin_bartering",
-    "minecraft:entities/wither_skeleton",
     "minecraft:gameplay/fishing",
+    "minecraft:entities/wither_skeleton",
     "minecraft:blocks/gravel"
 )
 data class Sequences(
@@ -31,6 +31,8 @@ data class Sequences(
 )
 private fun createSequence(key: String): lgbt.faith.chiyoko.sequences.Sequence? {
     return when (key) {
+        "minecraft:chests/trial_chambers/reward_ominous" -> Vault(true)
+        "minecraft:chests/trial_chambers/reward" -> Vault(false)
         "minecraft:gameplay/piglin_bartering" -> PiglinBartering()
         "minecraft:gameplay/fishing" -> Fishing()
         "minecraft:entities/wither_skeleton" -> WitherSkeleton()
@@ -71,6 +73,8 @@ class Chiyoko : ClientModInitializer {
 
 
     override fun onInitializeClient() {
+        ChiyokoComponents // force component to register
+
         configManager = ChiyokoConfigManager()
         configManager.load()
 

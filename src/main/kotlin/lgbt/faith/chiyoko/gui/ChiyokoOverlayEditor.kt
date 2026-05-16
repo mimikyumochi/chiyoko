@@ -7,6 +7,7 @@ import lgbt.faith.chiyoko.config.OverlayRotation
 import lgbt.faith.chiyoko.sequences.Fishing
 import lgbt.faith.chiyoko.sequences.Gravel
 import lgbt.faith.chiyoko.sequences.PiglinBartering
+import lgbt.faith.chiyoko.sequences.Vault
 import lgbt.faith.chiyoko.sequences.WitherSkeleton
 import net.minecraft.ChatFormatting
 import net.minecraft.client.Minecraft
@@ -45,7 +46,7 @@ class ChiyokoOverlayEditor : Screen(Component.literal("chiyoko overlay editor"))
             if (sequenceType is WitherSkeleton) {
                 list.addEntry(OverlayList.RollTypeEntry(key, configManager.config.getOverlay(key), configManager, worldName))
             }
-            if (sequenceType is Fishing || sequenceType is PiglinBartering || sequenceType is Gravel) {
+            if (sequenceType is Fishing || sequenceType is PiglinBartering || sequenceType is Gravel || sequenceType is Vault) {
                 list.addEntry(OverlayList.AdvancesEntry(key, configManager.config.getOverlay(key), configManager, worldName, font, list))
             }
         }
@@ -54,6 +55,11 @@ class ChiyokoOverlayEditor : Screen(Component.literal("chiyoko overlay editor"))
             configManager.save()
             this.minecraft.setScreen(ChiyokoConfigScreen())
         }.bounds(width / 2 - 100, height - 27, 200, 20).build())
+    }
+
+    override fun onClose() {
+        configManager.save()
+        this.minecraft.setScreen(null)
     }
 
     override fun extractRenderState(graphics: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, a: Float) {
@@ -73,7 +79,7 @@ class OverlayList(mc: Minecraft, width: Int, height: Int, y0: Int, itemHeight: I
         private var _focused = false
         override fun extractContent(graphics: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, hovered: Boolean, a: Float) {
             val mc = Minecraft.getInstance()
-            graphics.centeredText(mc.font, Component.literal(key).withStyle(ChatFormatting.YELLOW),
+            graphics.centeredText(mc.font, Component.literal(key.replace("minecraft:", "")).withStyle(ChatFormatting.YELLOW),
                 contentXMiddle, contentYMiddle - mc.font.lineHeight / 2, 0xFFFFFFFF.toInt())
         }
         override fun children(): List<GuiEventListener> = emptyList()

@@ -1,6 +1,7 @@
 package lgbt.faith.chiyoko.mixin
 
 import lgbt.faith.chiyoko.Chiyoko
+import lgbt.faith.chiyoko.isMatchingSeed
 import lgbt.faith.chiyoko.sequences.PiglinBartering
 import net.minecraft.client.Minecraft
 import net.minecraft.network.chat.Component
@@ -11,7 +12,6 @@ import org.spongepowered.asm.mixin.Mixin
 import org.spongepowered.asm.mixin.injection.At
 import org.spongepowered.asm.mixin.injection.Inject
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable
-import java.lang.classfile.ClassFile
 
 @Mixin(PiglinAi::class)
 class PiglinAiMixin {
@@ -41,11 +41,10 @@ class PiglinAiMixin {
             barter.advance(1)
             val xoroshiro = barter.getRngCopy()
             configManager.updateSequence(Chiyoko.worldName, Chiyoko.seed, xoroshiro, barter.key)
-            configManager.advanceSequence(Chiyoko.worldName, barter.key, 1)
 
             var isDesynced = !matchesPrediction(actualDrops, predictedRoll)
 
-            if (isDesynced && Chiyoko.seed != 0L) {
+            if (isDesynced && isMatchingSeed()) {
                 var advancements = 0
                 while (isDesynced) {
                     advancements++
@@ -54,7 +53,6 @@ class PiglinAiMixin {
                     barter.advance(1)
                     val xoroshiro = barter.getRngCopy()
                     configManager.updateSequence(Chiyoko.worldName, Chiyoko.seed, xoroshiro, barter.key)
-                    configManager.advanceSequence(Chiyoko.worldName, barter.key, 1)
 
                     isDesynced = !matchesPrediction(actualDrops, predictedRoll)
                 }

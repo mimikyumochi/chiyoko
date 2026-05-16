@@ -1,5 +1,7 @@
 package lgbt.faith.chiyoko.sequences
 
+import lgbt.faith.chiyoko.functions.EnchantFunctions
+import lgbt.faith.chiyoko.functions.ItemFunctions
 import lgbt.faith.chiyoko.rand.RandomSupport
 import lgbt.faith.chiyoko.rand.Xoroshiro128PlusPlus
 import net.minecraft.client.Minecraft
@@ -43,9 +45,9 @@ class PiglinBartering : Sequence {
     private val lootTable = listOf(
         Entry(ItemStack(Items.ENCHANTED_BOOK), 0, 5),
         Entry(ItemStack(Items.IRON_BOOTS), 5, 13),
-        Entry(getPotion("drink", "fire"), 13, 21),
-        Entry(getPotion("splash", "fire"), 21, 29),
-        Entry(getPotion("drink", "water"), 29, 39),
+        Entry(ItemStack(Items.POTION).apply { set(DataComponents.POTION_CONTENTS, PotionContents(Potions.FIRE_RESISTANCE)) }, 13, 21),
+        Entry(ItemStack(Items.SPLASH_POTION).apply { set(DataComponents.POTION_CONTENTS, PotionContents(Potions.FIRE_RESISTANCE)) }, 21, 29),
+        Entry(ItemStack(Items.POTION).apply { set(DataComponents.POTION_CONTENTS, PotionContents(Potions.WATER)) }, 29, 39),
         Entry(ItemStack(Items.IRON_NUGGET), 39, 49),
         Entry(ItemStack(Items.ENDER_PEARL), 49, 59),
         Entry(ItemStack(Items.DRIED_GHAST), 59, 69),
@@ -61,30 +63,6 @@ class PiglinBartering : Sequence {
         Entry(ItemStack(Items.GRAVEL), 389, 429),
         Entry(ItemStack(Items.BLACKSTONE), 429, 469),
     )
-
-    private fun getPotion(type: String, effect: String): ItemStack {
-        return when (type to effect) {
-            "splash" to "fire" -> {
-                val stack = ItemStack(Items.SPLASH_POTION)
-                stack.set(DataComponents.POTION_CONTENTS, PotionContents(Potions.FIRE_RESISTANCE))
-                stack
-            }
-            "drink" to "fire" -> {
-                val stack = ItemStack(Items.POTION)
-                stack.set(DataComponents.POTION_CONTENTS, PotionContents(Potions.FIRE_RESISTANCE))
-                stack
-            }
-            "drink" to "water" -> {
-                val stack = ItemStack(Items.POTION)
-                stack.set(DataComponents.POTION_CONTENTS, PotionContents(Potions.WATER))
-                stack
-            }
-            else -> ItemStack(Items.AIR)
-        }
-    }
-
-
-
 
     fun roll(amount: Int): List<ItemStack> {
         val itemList = mutableListOf<ItemStack>()
@@ -117,21 +95,20 @@ class PiglinBartering : Sequence {
         val item = itemStack.item
         return when (item) {
             Items.ENCHANTED_BOOK, Items.IRON_BOOTS -> {
-                rng.nextInt(1)
-                rng.nextInt(3)
-                1
+                rng.advance(1)
+                EnchantFunctions.enchantRandomly(rng, listOf("soul_speed"))?.level ?: 1
             }
-            Items.IRON_NUGGET      -> rng.nextInt(36 - 10 + 1) + 10 // 10-36
-            Items.ENDER_PEARL      -> rng.nextInt(4 - 2 + 1) + 2    // 2-4
-            Items.STRING           -> rng.nextInt(9 - 3 + 1) + 3    // 3-9
-            Items.QUARTZ           -> rng.nextInt(12 - 5 + 1) + 5   // 5-12
-            Items.CRYING_OBSIDIAN  -> rng.nextInt(3 - 1 + 1) + 1    // 1-3
-            Items.LEATHER          -> rng.nextInt(4 - 2 + 1) + 2    // 2-4
-            Items.SOUL_SAND        -> rng.nextInt(8 - 2 + 1) + 2    // 2-8
-            Items.NETHER_BRICK     -> rng.nextInt(8 - 2 + 1) + 2    // 2-8
-            Items.SPECTRAL_ARROW   -> rng.nextInt(12 - 6 + 1) + 6   // 6-12
-            Items.GRAVEL           -> rng.nextInt(16 - 8 + 1) + 8   // 8-16
-            Items.BLACKSTONE       -> rng.nextInt(16 - 8 + 1) + 8   // 8-16
+            Items.IRON_NUGGET      -> ItemFunctions.setCount(rng, 10, 36) // 10-36
+            Items.ENDER_PEARL      -> ItemFunctions.setCount(rng, 2, 4)    // 2-4
+            Items.STRING           -> ItemFunctions.setCount(rng, 3, 9)    // 3-9
+            Items.QUARTZ           -> ItemFunctions.setCount(rng, 5, 12)   // 5-12
+            Items.CRYING_OBSIDIAN  -> ItemFunctions.setCount(rng, 1, 3)    // 1-3
+            Items.LEATHER          -> ItemFunctions.setCount(rng, 2, 4)    // 2-4
+            Items.SOUL_SAND        -> ItemFunctions.setCount(rng, 2, 8)    // 2-8
+            Items.NETHER_BRICK     -> ItemFunctions.setCount(rng, 2, 8)    // 2-8
+            Items.SPECTRAL_ARROW   -> ItemFunctions.setCount(rng, 6, 12)   // 6-12
+            Items.GRAVEL           -> ItemFunctions.setCount(rng, 8, 16)   // 8-16
+            Items.BLACKSTONE       -> ItemFunctions.setCount(rng, 8, 16)   // 8-16
 
             else -> 1
         }

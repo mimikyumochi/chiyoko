@@ -1,6 +1,7 @@
 package lgbt.faith.chiyoko.mixin
 
 import lgbt.faith.chiyoko.Chiyoko
+import lgbt.faith.chiyoko.isMatchingSeed
 import lgbt.faith.chiyoko.sequences.Gravel
 import net.minecraft.client.Minecraft
 import net.minecraft.core.BlockPos
@@ -62,12 +63,11 @@ class BlockMixin {
 
             val xoroshiro = gravel.getRngCopy()
             configManager.updateSequence(Chiyoko.worldName, Chiyoko.seed, xoroshiro, gravel.key)
-            configManager.advanceSequence(Chiyoko.worldName, gravel.key, 1)
 
 
             var desynced = actualDrops.first().item != predicted.first().item
 
-            if (desynced && Chiyoko.seed != 0L) {
+            if (desynced && isMatchingSeed()) {
                 var advances = 0
                 while (desynced) {
                     advances++
@@ -76,7 +76,6 @@ class BlockMixin {
 
                     val xoroshiro = gravel.getRngCopy()
                     configManager.updateSequence(Chiyoko.worldName, Chiyoko.seed, xoroshiro, gravel.key)
-                    configManager.advanceSequence(Chiyoko.worldName, gravel.key, 1)
 
 
                     desynced = actualDrops.first().item != predicted.first().item

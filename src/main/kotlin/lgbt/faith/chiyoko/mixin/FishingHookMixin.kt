@@ -1,6 +1,7 @@
 package lgbt.faith.chiyoko.mixin
 
 import lgbt.faith.chiyoko.Chiyoko
+import lgbt.faith.chiyoko.isMatchingSeed
 import lgbt.faith.chiyoko.sequences.Fishing
 import net.minecraft.client.Minecraft
 import net.minecraft.network.chat.Component
@@ -73,11 +74,10 @@ class FishingHookMixin {
         fishing.advance(1, luck, isOpenWater, isJungle)
         val xoroshiro = fishing.getRngCopy()
         configManager.updateSequence(Chiyoko.worldName, Chiyoko.seed, xoroshiro, fishing.key)
-        configManager.advanceSequence(Chiyoko.worldName, fishing.key, 1)
 
         var isDesynced = actualDrops.firstOrNull()?.item != predictedRoll.first().item
 
-        if (isDesynced && Chiyoko.seed != 0L) {
+        if (isDesynced && isMatchingSeed()) {
             var advancements = 0
             while (isDesynced) {
                 advancements++
@@ -85,7 +85,6 @@ class FishingHookMixin {
                 fishing.advance(1, luck, isOpenWater, isJungle)
                 val xoroshiro = fishing.getRngCopy()
                 configManager.updateSequence(Chiyoko.worldName, Chiyoko.seed, xoroshiro, fishing.key)
-                configManager.advanceSequence(Chiyoko.worldName, fishing.key, 1)
 
                 isDesynced = actualDrops.firstOrNull()?.item != predictedRoll.first().item
             }
