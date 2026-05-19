@@ -20,6 +20,8 @@ import net.minecraft.world.item.enchantment.EnchantmentHelper
 import net.minecraft.world.item.enchantment.Enchantments
 
 class ChiyokoRenderer {
+    data class SubList(val xOffset: Int, val yOffset: Int, val items: List<ItemStack>)
+
     val mc = Minecraft.getInstance()
     val registries = mc.player?.level()?.registryAccess()!!
     val enchantLookup = registries.lookupOrThrow(Registries.ENCHANTMENT)
@@ -31,7 +33,7 @@ class ChiyokoRenderer {
     private fun gridToPixel(cell: Int) = (cell * gridSize) + border
 
     private val gridSize = 20
-    private val border = 2
+    private val border = 1
 
     fun render(graphics: GuiGraphicsExtractor) {
         if (!Chiyoko.loaded) return
@@ -74,40 +76,48 @@ class ChiyokoRenderer {
             val x = gridToPixel(pos.gridX)
             val y = gridToPixel(pos.gridY)
 
-            val itemList = when (sequence) {
-                is Vault -> sequence.roll(overlay.advances)
-                is PiglinBartering -> sequence.roll(overlay.advances)
-                is WitherSkeleton -> {
-                    val drops = sequence.roll(overlay.rollType, true, lootingLevel)
-                    drops.ifEmpty { listOf(ItemStack.EMPTY) }
-                }
-                is Fishing -> sequence.roll(overlay.advances, luck, isOpenWater, isJungle)
-                is Gravel -> sequence.roll(overlay.advances, fortuneLevel)
-                else -> emptyList()
-            }
-
             val vector = when {
                 overlay.rotation == OverlayRotation.HORIZONTAL && overlay.reversed  -> intArrayOf(-1, 0)
                 overlay.rotation == OverlayRotation.HORIZONTAL                      -> intArrayOf(1, 0)
                 overlay.reversed                                                    -> intArrayOf(0, -1)
                 else                                                                -> intArrayOf(0, 1)
             }
-            for ((index, item) in itemList.withIndex()) {
-                val step = (gridSize - 2) * index
-                val itemX = x + step * vector[0]
-                val itemY = y + step * vector[1]
+            val perpendicular = when {
+                overlay.rotation == OverlayRotation.HORIZONTAL -> intArrayOf(0, 1)
+                else -> intArrayOf(1, 0)
+            }
 
-                graphics.blitSprite(RenderPipelines.GUI_TEXTURED, SLOT_SPRITE, itemX, itemY, gridSize-2, gridSize-2)
-                graphics.item(item, itemX+1, itemY+1)
-                graphics.itemDecorations(font, item, itemX+1, itemY+1)
-                val hovered = mx in itemX until (itemX + gridSize) && my in itemY until (itemY + gridSize)
-                if (hovered) {
-                    graphics.setTooltipForNextFrame(
-                        mc.font,
-                        item,
-                        mx,
-                        my
-                    )
+            val subLists: List<SubList> = when (sequence) {
+                is Vault -> if (overlay.split) {
+                    sequence.rollEach(overlay.advances).mapIndexed { i, items ->
+                        SubList((gridSize - 2) * i * perpendicular[0], (gridSize - 2) * i * perpendicular[1], items)
+                    }
+                } else {
+                    listOf(SubList(0, 0, sequence.roll(overlay.advances)))
+                }
+                is PiglinBartering -> listOf(SubList(0, 0, sequence.roll(overlay.advances)))
+                is WitherSkeleton -> {
+                    val drops = sequence.roll(overlay.rollType, true, lootingLevel)
+                    listOf(SubList(0, 0, drops.ifEmpty { listOf(ItemStack.EMPTY) }))
+                }
+                is Fishing -> listOf(SubList(0, 0, sequence.roll(overlay.advances, luck, isOpenWater, isJungle)))
+                is Gravel  -> listOf(SubList(0, 0, sequence.roll(overlay.advances, fortuneLevel)))
+                else -> emptyList()
+            }
+
+            for (subList in subLists) {
+                for ((itemIndex, item) in subList.items.withIndex()) {
+                    val step = (gridSize - 2) * itemIndex
+                    val itemX = x + subList.xOffset + step * vector[0]
+                    val itemY = y + subList.yOffset + step * vector[1]
+
+                    graphics.blitSprite(RenderPipelines.GUI_TEXTURED, SLOT_SPRITE, itemX, itemY, gridSize - 2, gridSize - 2)
+                    graphics.item(item, itemX + 1, itemY + 1)
+                    graphics.itemDecorations(font, item, itemX + 1, itemY + 1)
+                    val hovered = mx in itemX until (itemX + gridSize) && my in itemY until (itemY + gridSize)
+                    if (hovered) {
+                        graphics.setTooltipForNextFrame(mc.font, item, mx, my)
+                    }
                 }
             }
         }

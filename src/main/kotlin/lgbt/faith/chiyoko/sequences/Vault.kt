@@ -51,7 +51,7 @@ class Vault(val isOminous: Boolean) : Sequence {
         }
     }
 
-    fun roll(amount: Int): List<ItemStack>  {
+    fun roll(amount: Int, merged: Boolean = true): List<ItemStack>  {
         val drops = mutableListOf<ItemStack>()
         val rng = xoroshiro.copy()
         repeat(amount) {
@@ -70,10 +70,33 @@ class Vault(val isOminous: Boolean) : Sequence {
                 local += applyFunctions(rng, rollWeighted(rng, UNIQUE).copy())
             }
 
-            drops += mergeStacks(local)
+            drops += if (merged) mergeStacks(local) else local
         }
         return drops
     }
+
+    fun rollEach(amount: Int): List<List<ItemStack>> {
+        val rng = xoroshiro.copy()
+        return List(amount) {
+            val local = mutableListOf<ItemStack>()
+
+            val useRare = rng.nextInt(10) < 8
+            val item = if (useRare) rollWeighted(rng, RARE).copy() else rollWeighted(rng, COMMON).copy()
+            local += applyFunctions(rng, item)
+
+            val rolls = rng.nextInt(3) + 1
+            repeat(rolls) {
+                local += applyFunctions(rng, rollWeighted(rng, COMMON).copy())
+            }
+            val chance = if (isOminous) 0.75f else 0.25f
+            if (rng.nextFloat() < chance) {
+                local += applyFunctions(rng, rollWeighted(rng, UNIQUE).copy())
+            }
+
+            mergeStacks(local)
+        }
+    }
+
 
     private fun rollWeighted(rng: Xoroshiro128PlusPlus, table: List<Pair<ItemStack, Int>>): ItemStack {
         var roll = rng.nextInt(table.sumOf { it.second })
@@ -156,12 +179,13 @@ class Vault(val isOminous: Boolean) : Sequence {
         }
         else {
             when (item.item) {
-                Items.ARROW        -> item.count = ItemFunctions.setCount(rng, 2, 8)
-                Items.TIPPED_ARROW -> item.count = ItemFunctions.setCount(rng, 2, 8)
-                Items.IRON_INGOT   -> item.count = ItemFunctions.setCount(rng, 1, 4)
-                Items.HONEY_BOTTLE -> item.count = ItemFunctions.setCount(rng, 1, 2)
-                Items.DIAMOND      -> item.count = ItemFunctions.setCount(rng, 1, 2)
+                Items.ARROW         -> item.count = ItemFunctions.setCount(rng, 2, 8)
+                Items.TIPPED_ARROW  -> item.count = ItemFunctions.setCount(rng, 2, 8)
+                Items.IRON_INGOT    -> item.count = ItemFunctions.setCount(rng, 1, 4)
+                Items.HONEY_BOTTLE  -> item.count = ItemFunctions.setCount(rng, 1, 2)
+                Items.DIAMOND       -> item.count = ItemFunctions.setCount(rng, 1, 2)
                 Items.GOLDEN_CARROT -> item.count = ItemFunctions.setCount(rng, 1, 2)
+                Items.EMERALD       -> item.count = ItemFunctions.setCount(rng, 2, 4)
 
                 Items.WIND_CHARGE  -> {
                     item.count = when (item.get(ChiyokoComponents.VARIANT)) {
@@ -169,12 +193,7 @@ class Vault(val isOminous: Boolean) : Sequence {
                         else -> ItemFunctions.setCount(rng, 1, 3)
                     }
                 }
-                Items.EMERALD -> {
-                    item.count = when (item.get(ChiyokoComponents.VARIANT)) {
-                        1 -> ItemFunctions.setCount(rng, 2, 8)
-                        else -> ItemFunctions.setCount(rng, 2, 4)
-                    }
-                }
+
 
                 Items.OMINOUS_BOTTLE -> item.set(DataComponents.OMINOUS_BOTTLE_AMPLIFIER, OminousBottleAmplifier(rng.nextInt(2)))
 
@@ -271,7 +290,7 @@ class Vault(val isOminous: Boolean) : Sequence {
         val NORMAL_COMMON = listOf(
             ItemStack(Items.ARROW) to 4,
             ItemStack(Items.TIPPED_ARROW).apply { set(DataComponents.POTION_CONTENTS, PotionContents(Potions.POISON)) } to 4,
-            ItemStack(Items.EMERALD).apply { set(ChiyokoComponents.VARIANT, 1) } to 4,
+            ItemStack(Items.EMERALD) to 4,
             ItemStack(Items.WIND_CHARGE) to 3,
             ItemStack(Items.IRON_INGOT) to 3,
             ItemStack(Items.HONEY_BOTTLE) to 3,

@@ -36,7 +36,11 @@ class MinecraftMixin {
                 val blockEntity = level.getBlockEntity(pending.pos) as? VaultBlockEntity
                 val displayItem = blockEntity?.sharedData?.displayItem ?: ItemStack.EMPTY
 
-                if (!displayItem.isEmpty && !pending.predictedItems.any { it.item == displayItem.item } && isMatchingSeed()) {
+                if (!displayItem.isEmpty &&
+                    pending.predictedItems.lastOrNull()?.item == displayItem.item &&
+                    pending.predictedItems.lastOrNull()?.count == displayItem.count &&
+                    isMatchingSeed()
+                ) {
                     handleVaultDesync(displayItem, isOminous)
                 }
             }

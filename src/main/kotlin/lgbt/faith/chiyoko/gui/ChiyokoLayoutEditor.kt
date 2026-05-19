@@ -15,7 +15,7 @@ class ChiyokoLayoutEditor : Screen(Component.literal("chiyoko layout editor")) {
     private var dragOffsetY: Int = 0
 
     private val gridSize = 20
-    private val border = 2
+    private val border = 1
 
     private val gridCols get() = (width - border * 2) / gridSize
     private val gridRows get() = (height - border * 2) / gridSize

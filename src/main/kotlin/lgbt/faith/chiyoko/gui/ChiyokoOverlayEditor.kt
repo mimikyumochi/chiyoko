@@ -49,6 +49,9 @@ class ChiyokoOverlayEditor : Screen(Component.literal("chiyoko overlay editor"))
             if (sequenceType is Fishing || sequenceType is PiglinBartering || sequenceType is Gravel || sequenceType is Vault) {
                 list.addEntry(OverlayList.AdvancesEntry(key, configManager.config.getOverlay(key), configManager, worldName, font, list))
             }
+            if (sequenceType is Vault) {
+                list.addEntry(OverlayList.SplitEntry(key, overlay, configManager, worldName))
+            }
         }
         addRenderableWidget(list)
         addRenderableWidget(Button.builder(Component.literal("done")) {
@@ -237,4 +240,34 @@ class OverlayList(mc: Minecraft, width: Int, height: Int, y0: Int, itemHeight: I
         override fun setFocused(focused: Boolean) {_focused = focused}
         override fun isFocused(): Boolean {return _focused}
     }
+    class SplitEntry(val key: String, val overlay: OverlayConfig, val configManager: ChiyokoConfigManager, val worldName: String) : Entry() {
+        private var _focused = false
+
+        private val button = Button.builder(splitLabel()) {
+            overlay.split = !overlay.split
+            it.message = splitLabel()
+            configManager.config.updateOverlay(key) { split = overlay.split }
+        }.bounds(0, 0, 150, 20).build()
+
+        override fun extractContent(graphics: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, hovered: Boolean, a: Float) {
+            val mc = Minecraft.getInstance()
+            graphics.text(mc.font, "split", contentX, contentYMiddle - mc.font.lineHeight / 2, 0xFFFFFFFF.toInt())
+            button.setPosition(contentRight - 150, contentY)
+            button.extractRenderState(graphics, mouseX, mouseY, a)
+        }
+        private fun splitLabel(): Component {
+            return if (overlay.split) {
+                Component.literal("true").withStyle(ChatFormatting.GREEN)
+            } else {
+                Component.literal("false").withStyle(ChatFormatting.RED)
+            }
+        }
+
+        override fun children(): List<GuiEventListener> = listOf(button)
+        override fun narratables(): List<NarratableEntry> = listOf(button)
+
+        override fun setFocused(focused: Boolean) {_focused = focused}
+        override fun isFocused(): Boolean {return _focused}
+    }
+
 }

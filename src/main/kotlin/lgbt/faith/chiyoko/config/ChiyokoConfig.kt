@@ -13,7 +13,8 @@ data class OverlayConfig(
     var rotation: OverlayRotation = OverlayRotation.VERTICAL,
     var reversed: Boolean = false,
     var advances: Int = 1,
-    var rollType: WitherSkeleton.RollType = WitherSkeleton.RollType.KillsUntilSkull
+    var rollType: WitherSkeleton.RollType = WitherSkeleton.RollType.KillsUntilSkull,
+    var split: Boolean = false
 )
 data class SequenceData(
     var seedLo: Long,
