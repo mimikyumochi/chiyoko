@@ -54,8 +54,8 @@ fun handleVaultDesync(actual: ItemStack, isOminous: Boolean) {
         val xoroshiro = vault.getRngCopy()
         Chiyoko.configManager.updateSequence(Chiyoko.worldName, Chiyoko.seed, xoroshiro, vault.key)
         advances++
-    } while(predicted.lastOrNull()?.item == actual.item &&
-            predicted.lastOrNull()?.count == actual.count)
+    } while(predicted.lastOrNull()?.item != actual.item ||
+            predicted.lastOrNull()?.count != actual.count)
 
     if (advances > 0) {
         val mc = Minecraft.getInstance()
