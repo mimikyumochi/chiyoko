@@ -17,11 +17,9 @@ class GuiMixin {
         at = [At("TAIL")]
     )
     private fun dropseed(
+        graphics: GuiGraphicsExtractor,
         deltaTracker: DeltaTracker,
-        shouldRenderLevel: Boolean,
-        resourcesLoaded: Boolean,
-        ci: CallbackInfo,
-        @Local graphics: GuiGraphicsExtractor
+        ci: CallbackInfo
     ) {
         ChiyokoRenderer().render(graphics)
     }

@@ -30,7 +30,7 @@ class ChiyokoRenderer {
 
     fun render(graphics: GuiGraphicsExtractor) {
         if (!Chiyoko.loaded) return
-        if (mc.gui.hud.isHidden) return
+        if (mc.options.hideGui) return
 
         val mc = Minecraft.getInstance()
 

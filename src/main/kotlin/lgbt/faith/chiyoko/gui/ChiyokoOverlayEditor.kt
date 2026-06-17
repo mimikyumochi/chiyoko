@@ -52,13 +52,13 @@ class ChiyokoOverlayEditor : Screen(Component.literal("chiyoko overlay editor"))
         addRenderableWidget(list)
         addRenderableWidget(Button.builder(Component.literal("done")) {
             configManager.save()
-            this.minecraft.gui.setScreen(ChiyokoConfigScreen())
+            this.minecraft.setScreen(ChiyokoConfigScreen())
         }.bounds(width / 2 - 100, height - 27, 200, 20).build())
     }
 
     override fun onClose() {
         configManager.save()
-        this.minecraft.gui.setScreen(null)
+        this.minecraft.setScreen(null)
     }
 
     override fun extractRenderState(graphics: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, a: Float) {

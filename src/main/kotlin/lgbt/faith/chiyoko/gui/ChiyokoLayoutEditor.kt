@@ -31,7 +31,7 @@ class ChiyokoLayoutEditor : Screen(Component.literal("chiyoko layout editor")) {
     override fun init() {
         doneButton = Button.builder(Component.literal("Done")) {
             configManager.save()
-            this.minecraft.gui.setScreen(ChiyokoConfigScreen())
+            this.minecraft.setScreen(ChiyokoConfigScreen())
         }.bounds(width / 2 - 100, height - 27, 200, 20).build()
         addRenderableWidget(doneButton)
         buttonAtBottom = true
