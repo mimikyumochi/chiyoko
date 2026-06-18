@@ -72,7 +72,7 @@ data class ChiyokoConfig(
 
 class ChiyokoConfigManager {
     companion object {
-        const val CURRENT_CONFIG_VERSION = 1
+        const val CURRENT_CONFIG_VERSION = 2
     }
 
     private val gson = GsonBuilder().setPrettyPrinting().create()
