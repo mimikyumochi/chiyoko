@@ -270,10 +270,7 @@ class MinecraftMixin {
         val actual = p.collectedItems.first()
         var desynced = actual.item != predicted.first().item
 
-        val mc = Minecraft.getInstance()
-        mc.player!!.sendSystemMessage(
-            Component.literal("${actual} | ${predicted} | $desynced | ${isMatchingSeed()} | ${p.luck}")
-        )
+
         if (!desynced || !isMatchingSeed()) return
 
         val catchList = recentCatches.toList() // snapshot the history once
