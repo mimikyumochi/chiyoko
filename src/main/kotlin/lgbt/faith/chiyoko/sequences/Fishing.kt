@@ -1,6 +1,8 @@
 package lgbt.faith.chiyoko.sequences
 
+import lgbt.faith.chiyoko.functions.EligibleEnchantments
 import lgbt.faith.chiyoko.functions.EnchantFunctions
+import lgbt.faith.chiyoko.functions.Enchantability
 import lgbt.faith.chiyoko.functions.ItemFunctions
 import lgbt.faith.chiyoko.rand.RandomSupport
 import lgbt.faith.chiyoko.rand.Xoroshiro128PlusPlus
@@ -43,7 +45,7 @@ class Fishing : Sequence {
         }
     }
 
-    private data class Entry(val item: ItemStack, val start: Int, val end: Int)
+    data class Entry(val item: ItemStack, val start: Int, val end: Int)
     private enum class LootTable { FISH, JUNK, TREASURE }
 
     private fun getLootTable(rng: Xoroshiro128PlusPlus, luck: Int, isOpenWater: Boolean): LootTable? {
@@ -70,14 +72,14 @@ class Fishing : Sequence {
         return null
     }
 
-    private fun fishTable() = listOf(
+    fun fishTable() = listOf(
         Entry(ItemStack(Items.COD), 0, 60),
         Entry(ItemStack(Items.SALMON), 60, 85),
         Entry(ItemStack(Items.TROPICAL_FISH), 85, 87),
         Entry(ItemStack(Items.PUFFERFISH), 87, 100)
     )
 
-    private fun junkTable(isJungle: Boolean) = listOf(
+    fun junkTable(isJungle: Boolean) = listOf(
         Entry(ItemStack(Items.LILY_PAD), 0, 17),
         Entry(ItemStack(Items.LEATHER_BOOTS), 17, 27),
         Entry(ItemStack(Items.LEATHER), 27, 37),
@@ -93,7 +95,7 @@ class Fishing : Sequence {
         Entry(ItemStack(Items.BAMBOO), 100, 110).takeIf { isJungle } ?: Entry(ItemStack(Items.AIR), 0, 0)
     )
 
-    private fun treasureTable() = listOf(
+    fun treasureTable() = listOf(
         Entry(ItemStack(Items.NAME_TAG), 0, 1),
         Entry(ItemStack(Items.SADDLE), 1, 2),
         Entry(ItemStack(Items.BOW), 2, 3),
@@ -141,12 +143,12 @@ class Fishing : Sequence {
             when (stack.item) {
                 Items.BOW -> {
                     stack.damageValue = Mth.floor((1f - ItemFunctions.applyDamage(rng, 0f, 0.25f)) * stack.maxDamage)
-                    val enchants = EnchantFunctions.enchantWithLevels(rng, stack, 30)
+                    val enchants = EnchantFunctions.enchantWithLevels(rng, Enchantability.FISHING_ROD, EligibleEnchantments.FISHING_ROD, 30)
                     enchants.forEach { stack.enchant(it.enchantment, it.level) }
                 }
 
                 Items.ENCHANTED_BOOK -> {
-                    val enchants = EnchantFunctions.enchantWithLevels(rng, stack, 30)
+                    val enchants = EnchantFunctions.enchantWithLevels(rng, Enchantability.BOOK, EligibleEnchantments.BOOK, 30)
                     val stored = ItemEnchantments.Mutable(ItemEnchantments.EMPTY)
                     enchants.forEach { stored.set(it.enchantment, it.level) }
                     stack.set(DataComponents.STORED_ENCHANTMENTS, stored.toImmutable())
@@ -154,7 +156,7 @@ class Fishing : Sequence {
 
                 Items.FISHING_ROD -> {
                     stack.damageValue = Mth.floor((1f - ItemFunctions.applyDamage(rng, 0f, 0.25f)) * stack.maxDamage)
-                    val enchants = EnchantFunctions.enchantWithLevels(rng, stack, 30)
+                    val enchants = EnchantFunctions.enchantWithLevels(rng, Enchantability.BOW, EligibleEnchantments.BOW, 30)
                     enchants.forEach { stack.enchant(it.enchantment, it.level) }
                 }
             }

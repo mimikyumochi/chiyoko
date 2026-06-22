@@ -40,9 +40,9 @@ class PiglinBartering : Sequence {
 
 
 
-    private data class Entry(val item: ItemStack, val start: Int, val end: Int)
+    data class Entry(val item: ItemStack, val start: Int, val end: Int)
 
-    private val lootTable = listOf(
+    val lootTable = listOf(
         Entry(ItemStack(Items.ENCHANTED_BOOK), 0, 5),
         Entry(ItemStack(Items.IRON_BOOTS), 5, 13),
         Entry(ItemStack(Items.POTION).apply { set(DataComponents.POTION_CONTENTS, PotionContents(Potions.FIRE_RESISTANCE)) }, 13, 21),
@@ -95,7 +95,6 @@ class PiglinBartering : Sequence {
         val item = itemStack.item
         return when (item) {
             Items.ENCHANTED_BOOK, Items.IRON_BOOTS -> {
-                rng.advance(1)
                 EnchantFunctions.enchantRandomly(rng, listOf("soul_speed"))?.level ?: 1
             }
             Items.IRON_NUGGET      -> ItemFunctions.setCount(rng, 10, 36) // 10-36

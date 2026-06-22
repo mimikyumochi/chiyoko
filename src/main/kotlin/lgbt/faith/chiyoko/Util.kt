@@ -52,32 +52,28 @@ fun validateSeed(context: CommandContext<FabricClientCommandSource?>?): Int {
     }
 }
 
+fun sendOverlay(text: String) {
+    val mc = Minecraft.getInstance()
+    mc.execute { mc.player?.sendOverlayMessage(Component.literal(text)) }
+}
+
 fun handleVaultDesync(actual: ItemStack, isOminous: Boolean) {
 
     val sequences = Chiyoko.sequences.map
     val vault = if (isOminous) sequences["minecraft:chests/trial_chambers/reward_ominous"] as? Vault ?: return
     else           sequences["minecraft:chests/trial_chambers/reward"] as? Vault ?: return
 
-    var advances = 0
+    var advances = 0L
+    val maxAdvances = 1000
     do {
         val predicted = vault.roll(1)
         vault.advance(1)
-
-        val xoroshiro = vault.getRngCopy()
-        Chiyoko.configManager.updateSequence(Chiyoko.worldName, Chiyoko.seed, xoroshiro, vault.key)
         advances++
-    } while(predicted.lastOrNull()?.item != actual.item ||
-            predicted.lastOrNull()?.count != actual.count)
+    } while((predicted.lastOrNull()?.item != actual.item ||
+            predicted.lastOrNull()?.count != actual.count) && advances < maxAdvances)
 
     if (advances > 0) {
-        val mc = Minecraft.getInstance()
-        mc.execute {
-            mc.player?.sendOverlayMessage(
-                Component.literal("advanced $advances times to account for desync")
-            )
-        }
-
+        Chiyoko.configManager.updateSequence(Chiyoko.worldName, Chiyoko.seed, vault.getRngCopy(), vault.key, advances)
+        sendOverlay("advanced $advances times to account for desync")
     }
-
-
 }

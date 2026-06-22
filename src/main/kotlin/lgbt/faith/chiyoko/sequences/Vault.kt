@@ -1,7 +1,9 @@
 package lgbt.faith.chiyoko.sequences
 
 import lgbt.faith.chiyoko.ChiyokoComponents
+import lgbt.faith.chiyoko.functions.EligibleEnchantments
 import lgbt.faith.chiyoko.functions.EnchantFunctions
+import lgbt.faith.chiyoko.functions.Enchantability
 import lgbt.faith.chiyoko.functions.ItemFunctions
 import lgbt.faith.chiyoko.rand.RandomSupport
 import lgbt.faith.chiyoko.rand.Xoroshiro128PlusPlus
@@ -16,6 +18,12 @@ import net.minecraft.world.item.enchantment.ItemEnchantments
 
 class Vault(val isOminous: Boolean) : Sequence {
     private lateinit var xoroshiro: Xoroshiro128PlusPlus
+
+    val lootTable = if (isOminous) {
+        OMINOUS_COMMON + OMINOUS_RARE + OMINOUS_UNIQUE
+    } else {
+        NORMAL_COMMON + NORMAL_RARE + NORMAL_UNIQUE
+    }
 
     override val key = if (isOminous) "minecraft:chests/trial_chambers/reward_ominous" else "minecraft:chests/trial_chambers/reward"
 
@@ -123,21 +131,21 @@ class Vault(val isOminous: Boolean) : Sequence {
 
                 Items.CROSSBOW -> {
                     val levels = ItemFunctions.setCount(rng, 5, 20)
-                    EnchantFunctions.enchantWithLevels(rng, item, levels).forEach {
+                    EnchantFunctions.enchantWithLevels(rng, Enchantability.CROSSBOW, EligibleEnchantments.CROSSBOW, levels).forEach {
                         item.enchant(it.enchantment, it.level)
                     }
                 }
 
                 Items.DIAMOND_AXE -> {
                     val levels = ItemFunctions.setCount(rng, 10, 20)
-                    EnchantFunctions.enchantWithLevels(rng, item, levels).forEach {
+                    EnchantFunctions.enchantWithLevels(rng, Enchantability.DIAMOND, EligibleEnchantments.AXE, levels).forEach {
                         item.enchant(it.enchantment, it.level)
                     }
                 }
 
                 Items.DIAMOND_CHESTPLATE -> {
                     val levels = ItemFunctions.setCount(rng, 10, 20)
-                    EnchantFunctions.enchantWithLevels(rng, item, levels).forEach {
+                    EnchantFunctions.enchantWithLevels(rng, Enchantability.DIAMOND, EligibleEnchantments.CHESTPLATE, levels).forEach {
                         item.enchant(it.enchantment, it.level)
                     }
                 }
@@ -201,37 +209,37 @@ class Vault(val isOminous: Boolean) : Sequence {
 
                 Items.BOW -> {
                     val levels = ItemFunctions.setCount(rng, 5, 15)
-                    EnchantFunctions.enchantWithLevels(rng, item, levels).forEach {
+                    EnchantFunctions.enchantWithLevels(rng, Enchantability.BOW, EligibleEnchantments.BOW, levels).forEach {
                         item.enchant(it.enchantment, it.level)
                     }
                 }
                 Items.CROSSBOW -> {
                     val levels = ItemFunctions.setCount(rng, 5, 20)
-                    EnchantFunctions.enchantWithLevels(rng, item, levels).forEach {
+                    EnchantFunctions.enchantWithLevels(rng, Enchantability.CROSSBOW, EligibleEnchantments.CROSSBOW, levels).forEach {
                         item.enchant(it.enchantment, it.level)
                     }
                 }
                 Items.IRON_AXE -> {
                     val levels = ItemFunctions.setCount(rng, 0, 10)
-                    EnchantFunctions.enchantWithLevels(rng, item, levels).forEach {
+                    EnchantFunctions.enchantWithLevels(rng, Enchantability.IRON, EligibleEnchantments.AXE, levels).forEach {
                         item.enchant(it.enchantment, it.level)
                     }
                 }
                 Items.IRON_CHESTPLATE -> {
                     val levels = ItemFunctions.setCount(rng, 0, 10)
-                    EnchantFunctions.enchantWithLevels(rng, item, levels).forEach {
+                    EnchantFunctions.enchantWithLevels(rng, Enchantability.IRON, EligibleEnchantments.CHESTPLATE, levels).forEach {
                         item.enchant(it.enchantment, it.level)
                     }
                 }
                 Items.DIAMOND_CHESTPLATE -> {
                     val levels = ItemFunctions.setCount(rng, 5, 15)
-                    EnchantFunctions.enchantWithLevels(rng, item, levels).forEach {
+                    EnchantFunctions.enchantWithLevels(rng, Enchantability.DIAMOND, EligibleEnchantments.CHESTPLATE, levels).forEach {
                         item.enchant(it.enchantment, it.level)
                     }
                 }
                 Items.DIAMOND_AXE -> {
                     val levels = ItemFunctions.setCount(rng, 5, 15)
-                    EnchantFunctions.enchantWithLevels(rng, item, levels).forEach {
+                    EnchantFunctions.enchantWithLevels(rng, Enchantability.DIAMOND, EligibleEnchantments.AXE, levels).forEach {
                         item.enchant(it.enchantment, it.level)
                     }
                 }
@@ -287,6 +295,7 @@ class Vault(val isOminous: Boolean) : Sequence {
 
     // tables
     companion object {
+
         val NORMAL_COMMON = listOf(
             ItemStack(Items.ARROW) to 4,
             ItemStack(Items.TIPPED_ARROW).apply { set(DataComponents.POTION_CONTENTS, PotionContents(Potions.POISON)) } to 4,

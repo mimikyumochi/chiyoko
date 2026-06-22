@@ -53,9 +53,14 @@ class MinecraftMixin {
             val currentState = blockState.getValue(VaultBlock.STATE)
             val isOminous = blockState.getValue(VaultBlock.OMINOUS)
 
+
+
             if (currentState == VaultState.EJECTING) {
                 val blockEntity = level.getBlockEntity(pending.pos) as? VaultBlockEntity
                 val displayItem = blockEntity?.sharedData?.displayItem ?: ItemStack.EMPTY
+
+                if (!pending.vault.lootTable.any { it.first.item == displayItem.item }) return
+
                 if (!displayItem.isEmpty &&
                     (pending.predictedItems.lastOrNull()?.item != displayItem.item ||
                             pending.predictedItems.lastOrNull()?.count != displayItem.count) &&
@@ -239,6 +244,8 @@ class MinecraftMixin {
 
     // fishing
     private fun processFishing() {
+
+
         val iter = DropEventState.pendingFishing.iterator()
         while (iter.hasNext()) {
             val p = iter.next()
@@ -260,13 +267,25 @@ class MinecraftMixin {
         }
     }
     private fun resolveFishing(p: PendingFishingReel) {
+        Minecraft.getInstance().player!!.sendSystemMessage(
+            Component.literal("${p.luck}")
+        )
+
         val fishing = Chiyoko.sequences.map["minecraft:gameplay/fishing"] as? Fishing ?: return
+
+        val actual = p.collectedItems.first()
+
+        // avoid potential misroutes which will cause the game to hang as it infinitely writes to the config file for desyncs.
+        val isFishDrop = fishing.fishTable().any { it.item.item == actual.item } ||
+                         fishing.junkTable(true).any { it.item.item == actual.item } ||
+                         fishing.treasureTable().any { it.item.item == actual.item }
+
+        if (!isFishDrop) return
 
         var predicted = fishing.roll(1, p.luck, p.isOpenWater, p.isJungle)
         fishing.advance(1, p.luck, p.isOpenWater, p.isJungle)
         Chiyoko.configManager.updateSequence(Chiyoko.worldName, Chiyoko.seed, fishing.getRngCopy(), fishing.key)
 
-        val actual = p.collectedItems.first()
         var desynced = actual.item != predicted.first().item
 
         val mc = Minecraft.getInstance()
@@ -274,8 +293,9 @@ class MinecraftMixin {
 
         val catchList = recentCatches.toList() // snapshot the history once
 
-        var advances = 0
-        while (desynced) {
+        var advances = 0L
+        val maxAdvances = 1000
+        while (desynced && advances < maxAdvances) {
             advances++
 
             if (tryMatchCatchSequence(fishing, catchList, p)) {
@@ -324,24 +344,29 @@ class MinecraftMixin {
     }
 
     private fun resolveBarter(p: PendingPiglinBarter) {
+        val actual = p.collectedItems.firstOrNull() ?: return
         val barter = Chiyoko.sequences.map["minecraft:gameplay/piglin_bartering"] as? PiglinBartering ?: return
+
+        if (!barter.lootTable.any { it.item.item == actual.item }) return
+
         var predicted = barter.roll(1)
         barter.advance(1)
         Chiyoko.configManager.updateSequence(Chiyoko.worldName, Chiyoko.seed, barter.getRngCopy(), barter.key)
 
-        val actual = p.collectedItems.firstOrNull() ?: return
         var desynced = actual.item != predicted.firstOrNull()?.item
         if (!desynced || !isMatchingSeed()) return
 
-        var advances = 0
+        var advances = 0L
+        val maxAdvances = 1000
         while (desynced) {
             advances++
             predicted = barter.roll(1)
             barter.advance(1)
-            Chiyoko.configManager.updateSequence(Chiyoko.worldName, Chiyoko.seed, barter.getRngCopy(), barter.key)
             desynced = actual.item != predicted.firstOrNull()?.item
         }
+        Chiyoko.configManager.updateSequence(Chiyoko.worldName, Chiyoko.seed, barter.getRngCopy(), barter.key, advances)
         sendOverlay("advanced $advances times to account for desync")
+
     }
 
 
@@ -375,10 +400,5 @@ class MinecraftMixin {
             }
         }
         return null
-    }
-
-    private fun sendOverlay(text: String) {
-        val mc = Minecraft.getInstance()
-        mc.execute { mc.player?.sendOverlayMessage(Component.literal(text)) }
     }
 }
