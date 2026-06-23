@@ -4,6 +4,8 @@ import lgbt.faith.chiyoko.*
 import lgbt.faith.chiyoko.sequences.Vault
 import net.minecraft.client.multiplayer.MultiPlayerGameMode
 import net.minecraft.client.player.LocalPlayer
+import net.minecraft.core.registries.Registries
+import net.minecraft.server.level.ServerLevel
 import net.minecraft.tags.BiomeTags
 import net.minecraft.world.InteractionHand
 import net.minecraft.world.InteractionResult
@@ -12,6 +14,8 @@ import net.minecraft.world.entity.ai.attributes.Attributes
 import net.minecraft.world.entity.monster.skeleton.WitherSkeleton
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.Items
+import net.minecraft.world.item.enchantment.EnchantmentHelper
+import net.minecraft.world.item.enchantment.Enchantments
 import net.minecraft.world.level.block.Blocks
 import net.minecraft.world.level.block.VaultBlock
 import net.minecraft.world.level.block.entity.vault.VaultState
@@ -35,6 +39,7 @@ class MultiPlayerGameModeMixin {
         hitResult: BlockHitResult,
         ci: CallbackInfoReturnable<InteractionResult>,
     ) {
+
         val level = player.level()
         val pos = hitResult.blockPos
         val blockState = level.getBlockState(pos)
@@ -63,16 +68,24 @@ class MultiPlayerGameModeMixin {
         hand: InteractionHand,
         ci: CallbackInfoReturnable<InteractionResult>,
     ) {
-        if (!player.getItemInHand(hand).`is`(Items.FISHING_ROD)) return
+        val level = player.level()
+        if (!level.isClientSide) return
+
+        val rod = player.getItemInHand(hand)
+        if (!rod.`is`(Items.FISHING_ROD)) return
         val hook = player.fishing ?: return
 
         // biting is synced to the client via SynchedEntityData
         if (!(hook as FishingHookAccessor).biting()) return
-
-
-        val level = player.level()
         val pos = hook.blockPosition()
-        val luck = player.getAttributeValue(Attributes.LUCK).toInt()
+
+        val enchantRegistry = level.registryAccess().lookup(Registries.ENCHANTMENT).orElse(null) ?: return
+
+        val luckOfTheSea = enchantRegistry.get(Enchantments.LUCK_OF_THE_SEA)
+            .map { EnchantmentHelper.getItemEnchantmentLevel(it, rod) }
+            .orElse(0) ?: return
+
+        val luck = player.getAttributeValue(Attributes.LUCK).toInt() + luckOfTheSea
         val isOpenWater = (hook as FishingHookAccessor).isOpenWater()
         val isJungle = level.getBiome(pos).`is`(BiomeTags.IS_JUNGLE)
 
