@@ -26,6 +26,8 @@ class LevelMixin {
 
         val oldState = level.getBlockState(pos)
         if (oldState.block == Blocks.GRAVEL && newState.block != Blocks.GRAVEL) {
+            if (DropEventState.selfBrokenBlocks.remove(pos) == null) return
+
             val mc = Minecraft.getInstance()
             val player = mc.player ?: return
             if (Vec3.atCenterOf(pos).distanceTo(player.position()) > 12.0) return

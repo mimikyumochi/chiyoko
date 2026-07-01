@@ -47,6 +47,8 @@ class MinecraftMixin {
         processWithers()
         processFishing()
         processBarters()
+        DropEventState.selfBrokenBlocks.entries.removeIf { (_, age) -> age > 2 }
+        DropEventState.selfBrokenBlocks.replaceAll { _, age -> age + 1 }
     }
 
     // vaults
@@ -60,8 +62,6 @@ class MinecraftMixin {
             val blockState = level.getBlockState(pending.pos)
             val currentState = blockState.getValue(VaultBlock.STATE)
             val isOminous = blockState.getValue(VaultBlock.OMINOUS)
-
-
 
             if (currentState == VaultState.EJECTING) {
                 val blockEntity = level.getBlockEntity(pending.pos) as? VaultBlockEntity

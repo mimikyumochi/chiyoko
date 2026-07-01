@@ -4,6 +4,7 @@ import lgbt.faith.chiyoko.*
 import lgbt.faith.chiyoko.sequences.Vault
 import net.minecraft.client.multiplayer.MultiPlayerGameMode
 import net.minecraft.client.player.LocalPlayer
+import net.minecraft.core.BlockPos
 import net.minecraft.core.registries.Registries
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.tags.BiomeTags
@@ -31,6 +32,10 @@ class MultiPlayerGameModeMixin {
 
 
     // vault - detect opening vaults
+    @Inject(method = ["destroyBlock"], at = [At("HEAD")])
+    private fun onDestroyBlock(pos: BlockPos, ci: CallbackInfoReturnable<Boolean>) {
+        DropEventState.selfBrokenBlocks[pos.immutable()] = 0
+    }
 
     @Inject(method = ["useItemOn"], at = [At("HEAD")])
     private fun onUseItemOn(

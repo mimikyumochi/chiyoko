@@ -33,6 +33,7 @@ class LivingEntityMixin {
         val lootingLevel = if (lootingHolder != null) EnchantmentHelper.getItemEnchantmentLevel(lootingHolder, player.mainHandItem) else 0
 
         val playerKilled = DropEventState.recentlyAttackedWithers.remove(entity.id)
+        if (!playerKilled) return
         DropEventState.pendingWithers.add(PendingWitherDeath(entity.position(), lootingLevel, playerKilled))
     }
 }

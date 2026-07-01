@@ -6,6 +6,7 @@ import net.minecraft.world.item.ItemStack
 import net.minecraft.world.phys.Vec3
 import java.util.concurrent.ConcurrentLinkedQueue
 
+
 class PendingGravelBreak(val pos: Vec3, val fortune: Int) {
     var ticksWaited = 0
     val collectedItems = mutableListOf<ItemStack>()
@@ -44,8 +45,11 @@ object DropEventState {
     val newItemEntities = mutableListOf<Pair<Vec3, ItemStack>>()
     val knownItemEntityIds = mutableSetOf<Int>()
 
-    // so LivingEntityMixin can set playerKilled correctly
+    // so LivingEntityMixin can return if not player killed
     val recentlyAttackedWithers = mutableSetOf<Int>()
+
+    // so LevelMixin can return if not broken by local player
+    val selfBrokenBlocks: MutableMap<BlockPos, Int> = mutableMapOf()
 }
 
 // unchanged vault stuff - if it isnt broke, dont fix it
