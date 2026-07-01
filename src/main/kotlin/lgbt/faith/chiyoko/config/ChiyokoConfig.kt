@@ -51,18 +51,14 @@ data class ChiyokoConfig(
     var hudSlots: MutableMap<String, GridPosition> = mutableMapOf(),
     var overlays: MutableMap<String, OverlayConfig> = mutableMapOf()
 ) {
+
     fun getSlotPosition(key: String, index: Int): GridPosition {
-        val position = hudSlots.getOrPut(key) { GridPosition(index, 0) }
-        Chiyoko.configManager.save()
-        return position
+        return hudSlots[key] ?: GridPosition(index, 0).also { hudSlots[key] = it }
     }
 
     fun getOverlay(sequenceName: String): OverlayConfig {
-        val overlay = overlays.getOrPut(sequenceName) { OverlayConfig() }
-        Chiyoko.configManager.save()
-        return overlay
+        return overlays[sequenceName] ?: OverlayConfig().also { overlays[sequenceName] = it }
     }
-
 
     fun updateOverlay(sequenceName: String, update: OverlayConfig.() -> Unit) {
         getOverlay(sequenceName).apply(update)

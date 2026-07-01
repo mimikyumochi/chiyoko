@@ -7,16 +7,39 @@ import lgbt.faith.chiyoko.sequences.*
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.renderer.RenderPipelines
+import net.minecraft.core.Holder
 import net.minecraft.core.registries.Registries
 import net.minecraft.resources.Identifier
 import net.minecraft.tags.BiomeTags
 import net.minecraft.world.InteractionHand
+import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.ItemStack
+import net.minecraft.world.item.enchantment.Enchantment
 import net.minecraft.world.item.enchantment.EnchantmentHelper
 import net.minecraft.world.item.enchantment.Enchantments
+import net.minecraft.world.level.Level
 
 class ChiyokoRenderer {
     data class SubList(val xOffset: Int, val yOffset: Int, val items: List<ItemStack>)
+
+    private data class RollCacheKey(
+        val advances: Int,
+        val rngLo: Long,
+        val rngHi: Long,
+        val luck: Int,
+        val isOpenWater: Boolean,
+        val isJungle: Boolean,
+        val fortuneLevel: Int,
+        val lootingLevel: Int,
+        val split: Boolean,
+        val rollType: Any?,
+    )
+
+    private val rollCache = HashMap<String, Pair<RollCacheKey, List<SubList>>>()
+
+    private var cachedRegistryLevel: Level? = null
+    private var cachedLootingHolder: Holder<Enchantment>? = null
+    private var cachedFortuneHolder: Holder<Enchantment>? = null
 
     val mc = Minecraft.getInstance()
 
@@ -28,20 +51,38 @@ class ChiyokoRenderer {
     private val gridSize = 20
     private val border = 1
 
+    private fun enchantHolders(level: Level): Pair<Holder<Enchantment>, Holder<Enchantment>>? {
+        if (cachedRegistryLevel === level && cachedLootingHolder != null && cachedFortuneHolder != null) {
+            return cachedLootingHolder!! to cachedFortuneHolder!!
+        }
+        val enchantLookup = level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT)
+        val looting = enchantLookup.getOrThrow(Enchantments.LOOTING)
+        val fortune = enchantLookup.getOrThrow(Enchantments.FORTUNE)
+        cachedRegistryLevel = level
+        cachedLootingHolder = looting
+        cachedFortuneHolder = fortune
+        return looting to fortune
+    }
+
+    private fun enchantLevel(holder: Holder<Enchantment>, player: Player): Int {
+        val mainhand = player.getItemInHand(InteractionHand.MAIN_HAND)
+        val offhand = player.getItemInHand(InteractionHand.OFF_HAND)
+        return maxOf(
+            EnchantmentHelper.getItemEnchantmentLevel(holder, mainhand),
+            EnchantmentHelper.getItemEnchantmentLevel(holder, offhand),
+        )
+    }
+
     fun render(graphics: GuiGraphicsExtractor) {
         if (!Chiyoko.loaded) return
         if (mc.options.hideGui) return
 
         val mc = Minecraft.getInstance()
 
-        val player = mc.player ?: return  // bail early if player is null
+        val player = mc.player ?: return
         val level = mc.level ?: return
 
-        val registries = player.level().registryAccess()
-        val enchantLookup = registries.lookupOrThrow(Registries.ENCHANTMENT)
-        val lootingHolder = enchantLookup.getOrThrow(Enchantments.LOOTING)
-        val fortuneHolder = enchantLookup.getOrThrow(Enchantments.FORTUNE)
-
+        val (lootingHolder, fortuneHolder) = enchantHolders(level) ?: return
 
         val mouseX = mc.mouseHandler.xpos() * mc.window.guiScaledWidth / mc.window.screenWidth
         val mouseY = mc.mouseHandler.ypos() * mc.window.guiScaledHeight / mc.window.screenHeight
@@ -60,14 +101,12 @@ class ChiyokoRenderer {
             else if (playerPos != null) level.getBiome(playerPos).`is`(BiomeTags.IS_JUNGLE)
             else false
 
-
-        val mainhand = mc.player?.getItemInHand(InteractionHand.MAIN_HAND) ?: return
-        val offhand = mc.player?.getItemInHand(InteractionHand.OFF_HAND) ?: return
-
-        val lootingLevel = listOf(mainhand, offhand).maxOf { stack -> EnchantmentHelper.getItemEnchantmentLevel(lootingHolder, stack) }
-        val fortuneLevel = listOf(mainhand, offhand).maxOf { stack -> EnchantmentHelper.getItemEnchantmentLevel(fortuneHolder, stack) }
+        val lootingLevel = enchantLevel(lootingHolder, player)
+        val fortuneLevel = enchantLevel(fortuneHolder, player)
 
         val configManager = Chiyoko.configManager
+
+        rollCache.keys.retainAll(keys.toSet())
 
         keys.forEachIndexed { index, key ->
             val sequence = Chiyoko.sequences.map[key] ?: return@forEachIndexed
@@ -91,22 +130,43 @@ class ChiyokoRenderer {
                 else -> intArrayOf(1, 0)
             }
 
-            val subLists: List<SubList> = when (sequence) {
-                is Vault -> if (overlay.split) {
-                    sequence.rollEach(overlay.advances).mapIndexed { i, items ->
-                        SubList((gridSize - 2) * i * perpendicular[0], (gridSize - 2) * i * perpendicular[1], items)
+            val rng = sequence.getRngCopy()
+            val cacheKey = RollCacheKey(
+                advances = overlay.advances,
+                rngLo = rng.seedLo,
+                rngHi = rng.seedHi,
+                luck = luck,
+                isOpenWater = isOpenWater,
+                isJungle = isJungle,
+                fortuneLevel = fortuneLevel,
+                lootingLevel = lootingLevel,
+                split = overlay.split,
+                rollType = if (sequence is WitherSkeleton) overlay.rollType else null,
+            )
+
+            val cached = rollCache[key]
+            val subLists: List<SubList> = if (cached != null && cached.first == cacheKey) {
+                cached.second
+            } else {
+                val rolled: List<SubList> = when (sequence) {
+                    is Vault -> if (overlay.split) {
+                        sequence.rollEach(overlay.advances).mapIndexed { i, items ->
+                            SubList((gridSize - 2) * i * perpendicular[0], (gridSize - 2) * i * perpendicular[1], items)
+                        }
+                    } else {
+                        listOf(SubList(0, 0, sequence.roll(overlay.advances)))
                     }
-                } else {
-                    listOf(SubList(0, 0, sequence.roll(overlay.advances)))
+                    is PiglinBartering -> listOf(SubList(0, 0, sequence.roll(overlay.advances)))
+                    is WitherSkeleton -> {
+                        val drops = sequence.roll(overlay.rollType, true, lootingLevel)
+                        listOf(SubList(0, 0, drops.ifEmpty { listOf(ItemStack.EMPTY) }))
+                    }
+                    is Fishing -> listOf(SubList(0, 0, sequence.roll(overlay.advances, luck, isOpenWater, isJungle)))
+                    is Gravel  -> listOf(SubList(0, 0, sequence.roll(overlay.advances, fortuneLevel)))
+                    else -> emptyList()
                 }
-                is PiglinBartering -> listOf(SubList(0, 0, sequence.roll(overlay.advances)))
-                is WitherSkeleton -> {
-                    val drops = sequence.roll(overlay.rollType, true, lootingLevel)
-                    listOf(SubList(0, 0, drops.ifEmpty { listOf(ItemStack.EMPTY) }))
-                }
-                is Fishing -> listOf(SubList(0, 0, sequence.roll(overlay.advances, luck, isOpenWater, isJungle)))
-                is Gravel  -> listOf(SubList(0, 0, sequence.roll(overlay.advances, fortuneLevel)))
-                else -> emptyList()
+                rollCache[key] = cacheKey to rolled
+                rolled
             }
 
             for (subList in subLists) {
