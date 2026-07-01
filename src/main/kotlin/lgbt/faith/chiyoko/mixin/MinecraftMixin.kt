@@ -20,7 +20,7 @@ import org.spongepowered.asm.mixin.injection.At
 import org.spongepowered.asm.mixin.injection.Inject
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo
 
-private const val MAX_CATCH_HISTORY = 10
+private const val MAX_CATCH_HISTORY = 1
 
 @Mixin(Minecraft::class)
 class MinecraftMixin {
