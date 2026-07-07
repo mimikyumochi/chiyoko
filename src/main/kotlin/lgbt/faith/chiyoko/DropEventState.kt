@@ -28,7 +28,7 @@ class PendingFishingReel(val pos: Vec3, val luck: Int, val isOpenWater: Boolean,
     companion object { const val MAX_TICKS = 60; const val COLLECT_WINDOW = 5; const val RADIUS = 8.0 }
 }
 
-class PendingPiglinBarter(val pos: Vec3) {
+class PendingPiglinBarter(val piglinId: Int) {
     var ticksWaited = 0
     val collectedItems = mutableListOf<ItemStack>()
     var collectingSince = -1

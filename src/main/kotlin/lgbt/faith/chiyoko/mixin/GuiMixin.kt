@@ -1,6 +1,8 @@
 package lgbt.faith.chiyoko.mixin
 
-import com.llamalad7.mixinextras.sugar.Local
+//? if >=26.2 {
+/*import com.llamalad7.mixinextras.sugar.Local
+*///?}
 import lgbt.faith.chiyoko.gui.ChiyokoRenderer
 import net.minecraft.client.DeltaTracker
 import net.minecraft.client.gui.Gui
@@ -17,11 +19,17 @@ class GuiMixin {
         at = [At("TAIL")]
     )
     private fun dropseed(
-        deltaTracker: DeltaTracker,
+        //? if >=26.2 {
+        /*deltaTracker: DeltaTracker,
         shouldRenderLevel: Boolean,
         resourcesLoaded: Boolean,
         ci: CallbackInfo,
         @Local graphics: GuiGraphicsExtractor
+        *///?} else {
+        graphics: GuiGraphicsExtractor,
+        deltaTracker: DeltaTracker,
+        ci: CallbackInfo
+        //?}
     ) {
         ChiyokoRenderer().render(graphics)
     }

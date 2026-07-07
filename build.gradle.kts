@@ -6,16 +6,18 @@ plugins {
     id("org.jetbrains.kotlin.jvm") version "2.3.20"
 }
 
-version = providers.gradleProperty("mod_version").get()
-group = providers.gradleProperty("maven_group").get()
-
-repositories {
-    // Add repositories to retrieve artifacts from in here.
-    // You should only use this when depending on other mods because
-    // Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
-    // See https://docs.gradle.org/current/userguide/declaring_repositories.html
-    // for more information about repositories.
+// Helper function to safely unwrap Stonecutter's lazy Provider objects
+fun resolveProperty(name: String, fallback: String): String {
+    val prop = project.findProperty(name) ?: return fallback
+    return if (prop is org.gradle.api.provider.Provider<*>) {
+        prop.orNull?.toString() ?: fallback
+    } else {
+        prop.toString()
+    }
 }
+
+version = resolveProperty("mod_version", "0.0.0")
+group = resolveProperty("maven_group", "lgbt.faith")
 
 loom {
     mods {
@@ -32,28 +34,23 @@ fabricApi {
 }
 
 dependencies {
-
     implementation("com.google.guava:guava:33.0.0-jre")
 
-    // To change the versions see the gradle.properties file
-    minecraft("com.mojang:minecraft:${providers.gradleProperty("minecraft_version").get()}")
-    implementation("net.fabricmc:fabric-loader:${providers.gradleProperty("loader_version").get()}")
+    minecraft("com.mojang:minecraft:${resolveProperty("minecraft_version", "26.2")}")
+    implementation("net.fabricmc:fabric-loader:${resolveProperty("loader_version", "0.19.3")}")
 
-    // Fabric API. This is technically optional, but you probably want it anyway.
-    implementation("net.fabricmc.fabric-api:fabric-api:${providers.gradleProperty("fabric_api_version").get()}")
-    implementation("net.fabricmc:fabric-language-kotlin:${providers.gradleProperty("fabric_kotlin_version").get()}")
-
+    implementation("net.fabricmc.fabric-api:fabric-api:${resolveProperty("fabric_api_version", "0.154.2+26.2")}")
+    implementation("net.fabricmc:fabric-language-kotlin:${resolveProperty("fabric_kotlin_version", "1.13.12+kotlin.2.4.0")}")
 }
 
 tasks.processResources {
     inputs.property("version", version)
 
-    val minecraftVersion = providers.gradleProperty("minecraft_version").get()
-    val loaderVersion = providers.gradleProperty("loader_version").get()
-    val kotlinLoaderVersion = providers.gradleProperty("fabric_kotlin_version").get()
+    val minecraftVersion = resolveProperty("minecraft_version", "")
+    val loaderVersion = resolveProperty("loader_version", "")
+    val kotlinLoaderVersion = resolveProperty("fabric_kotlin_version", "")
 
     filesMatching("fabric.mod.json") {
-        println("Matched: $path")
         expand(
             mapOf(
                 "version" to version,
@@ -76,9 +73,6 @@ kotlin {
 }
 
 java {
-    // Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
-    // if it is present.
-    // If you remove this line, sources will not be generated.
     withSourcesJar()
 
     sourceCompatibility = JavaVersion.VERSION_25
@@ -93,19 +87,10 @@ tasks.jar {
     }
 }
 
-// configure the maven publication
 publishing {
     publications {
         register<MavenPublication>("mavenJava") {
             from(components["java"])
         }
-    }
-
-    // See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
-    repositories {
-        // Add repositories to publish to here.
-        // Notice: This block does NOT have the same function as the block in the top level.
-        // The repositories here will be used for publishing your artifact, not for
-        // retrieving dependencies.
     }
 }

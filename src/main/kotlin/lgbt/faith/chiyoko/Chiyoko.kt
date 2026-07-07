@@ -86,7 +86,11 @@ class Chiyoko : ClientModInitializer {
 
             if (configManager.wasReset) {
                 SystemToast.add(
-                    client.gui.toastManager(),
+                    /*? if >=26.2 {*/
+                    /*client.gui.toastManager()
+                    *//*?} else {*/
+                    client.toastManager
+                    /*?}*/,
                     SystemToast.SystemToastId.PERIODIC_NOTIFICATION,
                     Component.literal("chiyoko config reset"),
                     Component.literal("bug that affects advancements was found, world config purged.")

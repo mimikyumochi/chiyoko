@@ -126,10 +126,11 @@ class MinecraftMixin {
             when {
                 entity is Piglin -> {
                     livePiglinIds.add(entity.id)
-                    val holdingGold = entity.mainHandItem.`is`(Items.GOLD_INGOT)
+                    val holdingGold = entity.offhandItem.`is`(Items.GOLD_INGOT)
                     val wasHolding = piglinGoldState[entity.id] ?: false
+
                     if (!wasHolding && holdingGold) {
-                        DropEventState.pendingBarters.add(PendingPiglinBarter(entity.position()))
+                        DropEventState.pendingBarters.add(PendingPiglinBarter(entity.id))
                     }
                     piglinGoldState[entity.id] = holdingGold
                 }
@@ -198,8 +199,10 @@ class MinecraftMixin {
 
             val barter = nearestEligible(
                 DropEventState.pendingBarters, PendingPiglinBarter.RADIUS, itemPos,
-                isEligible = { true },
-                posOf = { it.pos },
+                isEligible = { it.collectedItems.isEmpty() && it.ticksWaited >= 115 },
+                posOf = { pending ->
+                    level.getEntity(pending.piglinId)?.position() ?: net.minecraft.world.phys.Vec3.ZERO
+                },
             )
 
             if (barter != null) {
@@ -388,8 +391,8 @@ class MinecraftMixin {
         val iter = DropEventState.pendingBarters.iterator()
         while (iter.hasNext()) {
             val p = iter.next()
-            if (p.collectingSince >= 0) p.collectingSince++
             p.ticksWaited++
+            if (p.collectingSince >= 0) p.collectingSince++
 
             val ready = p.collectingSince >= PendingPiglinBarter.COLLECT_WINDOW
             val expired = p.ticksWaited >= PendingPiglinBarter.MAX_TICKS
@@ -415,7 +418,7 @@ class MinecraftMixin {
 
         var advances = 0L
         val maxAdvances = 1000
-        while (desynced) {
+        while (desynced && advances < maxAdvances) {
             advances++
             predicted = barter.roll(1)
             barter.advance(1)

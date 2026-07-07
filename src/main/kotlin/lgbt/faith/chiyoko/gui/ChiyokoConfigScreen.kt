@@ -46,7 +46,11 @@ class ChiyokoConfigScreen : Screen(Component.literal("chiyoko config")) {
                 Chiyoko.seed = s.toLong()
                 Chiyoko.changeWorldSeed()
 
-                this.minecraft.gui.setScreen(null)
+                /*? if >=26.2 {*/
+                /*this.minecraft.gui.setScreen(null)
+                *//*?} else {*/
+                this.minecraft.setScreen(null)
+                /*?}*/
             }
             .bounds(row1StartX + inputWidth+gap, yPos, btnWidth, btnHeight)
             .build()
@@ -60,14 +64,22 @@ class ChiyokoConfigScreen : Screen(Component.literal("chiyoko config")) {
 
         this.addRenderableWidget(
             Button.builder(Component.literal("edit layout")) {
-                this.minecraft.gui.setScreen(ChiyokoLayoutEditor())
+                /*? if >=26.2 {*/
+                /*this.minecraft.gui.setScreen(ChiyokoLayoutEditor())
+                *//*?} else {*/
+                this.minecraft.setScreen(ChiyokoLayoutEditor())
+                /*?}*/
             }
             .bounds(row2StartX, row2Y, editBtnWidth, btnHeight)
             .build()
         )
         this.addRenderableWidget(
             Button.builder(Component.literal("edit overlays")) {
-                this.minecraft.gui.setScreen(ChiyokoOverlayEditor())
+                /*? if >=26.2 {*/
+                /*this.minecraft.gui.setScreen(ChiyokoOverlayEditor())
+                *//*?} else {*/
+                this.minecraft.setScreen(ChiyokoOverlayEditor())
+                /*?}*/
             }
             .bounds(row2StartX + editBtnWidth + gap, row2Y, editBtnWidth, btnHeight)
             .build()
@@ -79,7 +91,11 @@ class ChiyokoConfigScreen : Screen(Component.literal("chiyoko config")) {
 
         this.addRenderableWidget(
             Button.builder(Component.literal("close")) {
-                this.minecraft.gui.setScreen(PauseScreen(true))
+                /*? if >=26.2 {*/
+                /*this.minecraft.gui.setScreen(PauseScreen(true))
+                *//*?} else {*/
+                this.minecraft.setScreen(PauseScreen(true))
+                /*?}*/
             }
                 .bounds(row3StartX, row3Y, editBtnWidth, btnHeight)
                 .build()

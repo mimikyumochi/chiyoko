@@ -75,8 +75,16 @@ class ChiyokoRenderer {
 
     fun render(graphics: GuiGraphicsExtractor) {
         if (!Chiyoko.loaded) return
-        if (mc.gui.hud.isHidden) return
 
+
+        if (
+        /*? if >=26.2 {*/
+        /*mc.gui.hud.isHidden
+        *//*?} else {*/
+            mc.options.hideGui
+        /*?}*/
+            ) return
+        var hoveredItem: ItemStack? = null
         val mc = Minecraft.getInstance()
 
         val player = mc.player ?: return
@@ -180,10 +188,15 @@ class ChiyokoRenderer {
                     graphics.itemDecorations(font, item, itemX + 1, itemY + 1)
                     val hovered = mx in itemX until (itemX + gridSize) && my in itemY until (itemY + gridSize)
                     if (hovered) {
-                        graphics.setTooltipForNextFrame(mc.font, item, mx, my)
+                        hoveredItem = item
                     }
                 }
             }
+        }
+        if (hoveredItem != null) {
+            val tickDelta = mc.deltaTracker.gameTimeDeltaTicks
+            graphics.setTooltipForNextFrame(mc.font, hoveredItem, mx, my)
+            graphics.extractDeferredElements(mx, my, tickDelta);
         }
     }
 }
