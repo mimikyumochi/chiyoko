@@ -50,10 +50,10 @@ abstract class PauseScreenMixin {
 
         val button = builder(text) {
             /*? if >=26.2 {*/
-            /*Minecraft.getInstance().gui.setScreen(ChiyokoConfigScreen())
-            *//*?} else {*/
-            Minecraft.getInstance().setScreen(ChiyokoConfigScreen())
-            /*?}*/
+            Minecraft.getInstance().gui.setScreen(ChiyokoConfigScreen())
+            /*?} else {*/
+            /*Minecraft.getInstance().setScreen(ChiyokoConfigScreen())
+            *//*?}*/
         }.bounds(x, y, width, height).build()
 
         (this as ScreenAccessor).callAddRenderableWidget(button)
