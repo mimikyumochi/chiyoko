@@ -1,9 +1,11 @@
 package lgbt.faith.chiyoko.functions
 
 import lgbt.faith.chiyoko.rand.Xoroshiro128PlusPlus
+import lgbt.faith.chiyoko.sendOverlay
 import net.minecraft.client.Minecraft
 import net.minecraft.core.Holder
 import net.minecraft.core.registries.Registries
+import net.minecraft.network.chat.Component
 import net.minecraft.resources.Identifier
 import net.minecraft.tags.ItemTags
 import net.minecraft.world.item.Items
@@ -60,7 +62,7 @@ object EnchantFunctions {
 
         val validHolders: List<Enchantment> =
             options.mapNotNull { getEnchantmentObject(it) }
-
+        sendOverlay("$validHolders")
         if (validHolders.isEmpty()) return null
 
         val holder = validHolders[rng.nextInt(validHolders.size)]

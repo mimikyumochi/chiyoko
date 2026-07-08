@@ -2,6 +2,7 @@ package lgbt.faith.chiyoko.gui
 
 import lgbt.faith.chiyoko.Chiyoko
 import lgbt.faith.chiyoko.config.OverlayRotation
+import lgbt.faith.chiyoko.config.RollType
 import lgbt.faith.chiyoko.keys
 import lgbt.faith.chiyoko.sequences.*
 import net.minecraft.client.Minecraft
@@ -120,6 +121,7 @@ class ChiyokoRenderer {
             val sequence = Chiyoko.sequences.map[key] ?: return@forEachIndexed
             val overlay = configManager.config.getOverlay(key)
 
+            if (overlay.tracked != true) return@forEachIndexed
             if (!overlay.visible) return@forEachIndexed
 
             val pos = configManager.config.getSlotPosition(key, index)
@@ -149,7 +151,7 @@ class ChiyokoRenderer {
                 fortuneLevel = fortuneLevel,
                 lootingLevel = lootingLevel,
                 split = overlay.split,
-                rollType = if (sequence is WitherSkeleton) overlay.rollType else null,
+                rollType = if (sequence is WitherSkeleton || sequence is Shulker) overlay.rollType else null,
             )
 
             val cached = rollCache[key]
@@ -166,11 +168,16 @@ class ChiyokoRenderer {
                     }
                     is PiglinBartering -> listOf(SubList(0, 0, sequence.roll(overlay.advances)))
                     is WitherSkeleton -> {
-                        val drops = sequence.roll(overlay.rollType, true, lootingLevel)
+                        val drops = sequence.roll(overlay.rollType ?: RollType.KillsUntilItem, true, lootingLevel)
+                        listOf(SubList(0, 0, drops.ifEmpty { listOf(ItemStack.EMPTY) }))
+                    }
+                    is Shulker -> {
+                        val drops = sequence.roll(overlay.rollType ?: RollType.KillsUntilItem, lootingLevel)
                         listOf(SubList(0, 0, drops.ifEmpty { listOf(ItemStack.EMPTY) }))
                     }
                     is Fishing -> listOf(SubList(0, 0, sequence.roll(overlay.advances, luck, isOpenWater, isJungle)))
                     is Gravel  -> listOf(SubList(0, 0, sequence.roll(overlay.advances, fortuneLevel)))
+
                     else -> emptyList()
                 }
                 rollCache[key] = cacheKey to rolled

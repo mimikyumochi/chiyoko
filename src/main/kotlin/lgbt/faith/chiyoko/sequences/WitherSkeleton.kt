@@ -1,5 +1,6 @@
 package lgbt.faith.chiyoko.sequences
 
+import lgbt.faith.chiyoko.config.RollType
 import lgbt.faith.chiyoko.rand.RandomSupport
 import lgbt.faith.chiyoko.rand.Xoroshiro128PlusPlus
 import net.minecraft.world.item.ItemStack
@@ -27,8 +28,6 @@ class WitherSkeleton : Sequence {
             nextDrops(xoroshiro, playerKilled, lootingLevel)
         }
     }
-
-    enum class RollType { NextDrop, KillsUntilSkull }
 
     fun killsUntilDrop(rng: Xoroshiro128PlusPlus, looting: Int): List<ItemStack> {
 
@@ -68,9 +67,11 @@ class WitherSkeleton : Sequence {
         val rng = xoroshiro.copy()
         return when (type) {
             RollType.NextDrop -> nextDrops(rng, playerKilled, lootingLevel)
-            RollType.KillsUntilSkull -> killsUntilDrop(rng, lootingLevel)
+            RollType.KillsUntilItem -> killsUntilDrop(rng, lootingLevel)
         }
     }
+
+    val lootTable = listOf(Items.BONE, Items.COAL, Items.WITHER_SKELETON_SKULL)
 
 
 }

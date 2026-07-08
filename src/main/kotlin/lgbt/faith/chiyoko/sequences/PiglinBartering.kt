@@ -95,7 +95,7 @@ class PiglinBartering : Sequence {
         val item = itemStack.item
         return when (item) {
             Items.ENCHANTED_BOOK, Items.IRON_BOOTS -> {
-                EnchantFunctions.enchantRandomly(rng, listOf("soul_speed"))?.level ?: 1
+                EnchantFunctions.enchantRandomly(rng, listOf("soul_speed"))?.level ?: 0
             }
             Items.IRON_NUGGET      -> ItemFunctions.setCount(rng, 10, 36) // 10-36
             Items.ENDER_PEARL      -> ItemFunctions.setCount(rng, 2, 4)    // 2-4

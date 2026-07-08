@@ -18,7 +18,14 @@ class PendingWitherDeath(val pos: Vec3, val looting: Int, val playerKilled: Bool
     var ticksWaited = 0
     val collectedItems = mutableListOf<ItemStack>()
     var collectingSince = -1
-    companion object { const val MAX_TICKS = 80; const val COLLECT_WINDOW = 10; const val RADIUS = 5.0 }
+    companion object { const val MAX_TICKS = 12; const val COLLECT_WINDOW = 10; const val RADIUS = 5.0 }
+}
+
+class PendingShulkerDeath(val pos: Vec3, val looting: Int) {
+    var ticksWaited = 0
+    val collectedItems = mutableListOf<ItemStack>()
+    var collectingSince = -1
+    companion object { const val MAX_TICKS = 12; const val COLLECT_WINDOW = 10; const val RADIUS = 5.0 }
 }
 
 class PendingFishingReel(val pos: Vec3, val luck: Int, val isOpenWater: Boolean, val isJungle: Boolean) {
@@ -36,10 +43,11 @@ class PendingPiglinBarter(val piglinId: Int) {
 }
 
 object DropEventState {
-    val pendingGravels  = mutableListOf<PendingGravelBreak>()
-    val pendingWithers  = mutableListOf<PendingWitherDeath>()
-    val pendingFishing  = mutableListOf<PendingFishingReel>()
-    val pendingBarters  = mutableListOf<PendingPiglinBarter>()
+    val pendingGravels   = mutableListOf<PendingGravelBreak>()
+    val pendingWithers   = mutableListOf<PendingWitherDeath>()
+    val pendingShulkers  = mutableListOf<PendingShulkerDeath>()
+    val pendingFishing   = mutableListOf<PendingFishingReel>()
+    val pendingBarters   = mutableListOf<PendingPiglinBarter>()
 
     // filled and drained by MinecraftMixin every tick
     val newItemEntities = mutableListOf<Pair<Vec3, ItemStack>>()

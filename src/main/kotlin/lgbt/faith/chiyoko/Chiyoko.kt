@@ -20,7 +20,8 @@ val keys = listOf(
     "minecraft:gameplay/piglin_bartering",
     "minecraft:gameplay/fishing",
     "minecraft:entities/wither_skeleton",
-    "minecraft:blocks/gravel"
+    "minecraft:blocks/gravel",
+    "minecraft:entities/shulker"
 )
 data class Sequences(
     val map: MutableMap<String, lgbt.faith.chiyoko.sequences.Sequence> = mutableMapOf()
@@ -33,6 +34,7 @@ private fun createSequence(key: String): lgbt.faith.chiyoko.sequences.Sequence? 
         "minecraft:gameplay/fishing" -> Fishing()
         "minecraft:entities/wither_skeleton" -> WitherSkeleton()
         "minecraft:blocks/gravel" -> Gravel()
+        "minecraft:entities/shulker" -> Shulker()
         else -> null
     }
 }

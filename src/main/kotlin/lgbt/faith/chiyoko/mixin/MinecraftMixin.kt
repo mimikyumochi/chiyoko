@@ -1,6 +1,7 @@
 package lgbt.faith.chiyoko.mixin
 
 import lgbt.faith.chiyoko.*
+import lgbt.faith.chiyoko.config.RollType
 import lgbt.faith.chiyoko.functions.EnchantFunctions
 import lgbt.faith.chiyoko.functions.Enchantment
 import lgbt.faith.chiyoko.rand.Xoroshiro128PlusPlus
@@ -66,6 +67,7 @@ class MinecraftMixin {
         routeNewItemEntities(level)
         processGravels()
         processWithers()
+        processShulkers()
         processFishing()
         processBarters()
         ageSelfBrokenBlocks()
@@ -120,7 +122,8 @@ class MinecraftMixin {
         val trackItems = DropEventState.pendingGravels.isNotEmpty() ||
                 DropEventState.pendingFishing.isNotEmpty() ||
                 DropEventState.pendingWithers.isNotEmpty() ||
-                DropEventState.pendingBarters.isNotEmpty()
+                DropEventState.pendingBarters.isNotEmpty() ||
+                DropEventState.pendingShulkers.isNotEmpty()
 
         for (entity in level.entitiesForRendering()) {
             when {
@@ -187,13 +190,26 @@ class MinecraftMixin {
 
             val wither = nearestEligible(
                 DropEventState.pendingWithers, PendingWitherDeath.RADIUS, itemPos,
-                isEligible = { true },
+                isEligible = { it.collectedItems.size < 3 },
                 posOf = { it.pos },
             )
+
+            val shulker = nearestEligible(
+                DropEventState.pendingShulkers, PendingShulkerDeath.RADIUS, itemPos,
+                isEligible = { it.collectedItems.isEmpty() },
+                posOf = { it.pos },
+            )
+
 
             if (wither != null) {
                 wither.collectedItems.add(itemStack)
                 if (wither.collectingSince == -1) wither.collectingSince = 0
+                continue
+            }
+
+            if (shulker != null) {
+                shulker.collectedItems.add(itemStack)
+                if (shulker.collectingSince == -1) shulker.collectingSince = 0
                 continue
             }
 
@@ -231,6 +247,8 @@ class MinecraftMixin {
     }
 
     private fun resolveGravel(p: PendingGravelBreak) {
+        if (Chiyoko.configManager.config.getOverlay("minecraft:blocks/gravel").tracked != true) return
+
         val gravel = Chiyoko.sequences.map["minecraft:blocks/gravel"] as? Gravel ?: return
 
         val actual = p.collectedItems.first()
@@ -260,6 +278,55 @@ class MinecraftMixin {
         sendOverlay("advanced $advances times to account for desync")
     }
 
+    // shulker
+    private fun processShulkers() {
+        val iter = DropEventState.pendingShulkers.iterator()
+        while (iter.hasNext()) {
+            val p = iter.next()
+            if (p.collectingSince >= 0) p.collectingSince++
+            p.ticksWaited++
+
+            val ready = p.collectingSince >= PendingShulkerDeath.COLLECT_WINDOW
+            val expired = p.ticksWaited >= PendingShulkerDeath.MAX_TICKS
+            if (!ready && !expired) continue
+
+            val genuinelyEmpty = p.collectingSince == -1
+            if (p.collectedItems.isNotEmpty() || genuinelyEmpty) resolveShulkers(p)
+            iter.remove()
+        }
+    }
+    private fun resolveShulkers(p: PendingShulkerDeath) {
+        if (Chiyoko.configManager.config.getOverlay("minecraft:entities/shulker").tracked != true) return
+
+        val shulkerSeq = Chiyoko.sequences.map["minecraft:entities/shulker"] as Shulker
+
+        val actualDrops = p.collectedItems.filter { it.item != Items.AIR }
+        if (actualDrops.any { drop -> drop.item !in shulkerSeq.lootTable }) return
+
+        val predictedDrops = shulkerSeq.roll(RollType.NextDrop, p.looting)
+        shulkerSeq.advance(1, p.looting)
+        Chiyoko.configManager.updateSequence(Chiyoko.worldName, Chiyoko.seed, shulkerSeq.getRngCopy(), shulkerSeq.key)
+
+
+        if (matchesPrediction(actualDrops, predictedDrops) || !isMatchingSeed()) return
+
+        val result = findDesyncFix(
+            startXoro = shulkerSeq.getRngCopy(),
+            maxDepth = 12, // down from 50
+            actualDrops = actualDrops,
+            branchOptions = listOf(false, true), // hasLooting
+            rollBranch = { xoro, hasLooting -> shulkerSeq.nextDrops(xoro, if (hasLooting) p.looting else 0) },
+        )
+
+        if (result != null) {
+            val (found, advancements) = result
+            Chiyoko.configManager.updateSequence(
+                Chiyoko.worldName, Chiyoko.seed, found, shulkerSeq.key, advancements.toLong()
+            )
+            sendOverlay("advanced $advancements times to account for desync")
+        }
+    }
+
     // wither skeleton
 
     private fun processWithers() {
@@ -273,26 +340,40 @@ class MinecraftMixin {
             val expired = p.ticksWaited >= PendingWitherDeath.MAX_TICKS
             if (!ready && !expired) continue
 
-            resolveWither(p)
+            val genuinelyEmpty = p.collectingSince == -1
+            if (p.collectedItems.isNotEmpty() || genuinelyEmpty) resolveWither(p)
             iter.remove()
         }
     }
 
     private fun resolveWither(p: PendingWitherDeath) {
-        val witherSeq = Chiyoko.sequences.map["minecraft:entities/wither_skeleton"]
-                as? lgbt.faith.chiyoko.sequences.WitherSkeleton ?: return
+        if (Chiyoko.configManager.config.getOverlay("minecraft:entities/wither_skeleton").tracked != true) return
+
+        val witherSeq = Chiyoko.sequences.map["minecraft:entities/wither_skeleton"] as? WitherSkeleton ?: return
+
+        val actualDrops = p.collectedItems.filter { it.item != Items.AIR }
+
+        if (actualDrops.any { drop -> drop.item !in witherSeq.lootTable }) return
 
         val predictedDrops = witherSeq.roll(
-            lgbt.faith.chiyoko.sequences.WitherSkeleton.RollType.NextDrop,
+            RollType.NextDrop,
             p.playerKilled, p.looting
         )
         witherSeq.advance(1, p.playerKilled, p.looting)
         Chiyoko.configManager.updateSequence(Chiyoko.worldName, Chiyoko.seed, witherSeq.getRngCopy(), witherSeq.key)
 
-        val actualDrops = p.collectedItems.filter { it.item != Items.AIR }
         if (matchesPrediction(actualDrops, predictedDrops) || !isMatchingSeed()) return
 
-        val result = findMatchingState(witherSeq, actualDrops, looting = p.looting)
+        val result = findDesyncFix(
+            startXoro = witherSeq.getRngCopy(),
+            maxDepth = 12,
+            actualDrops = actualDrops,
+            branchOptions = listOf(false to false, true to false, true to true), // (playerKilled, hasLooting)
+            rollBranch = { xoro, (playerKilled, hasLooting) ->
+                witherSeq.nextDrops(xoro, playerKilled, if (hasLooting) p.looting else 0)
+            },
+        )
+
         if (result != null) {
             val (found, advancements) = result
             Chiyoko.configManager.updateSequence(
@@ -325,6 +406,8 @@ class MinecraftMixin {
         }
     }
     private fun resolveFishing(p: PendingFishingReel) {
+        if (Chiyoko.configManager.config.getOverlay("minecraft:gameplay/fishing").tracked != true) return
+
         val fishing = Chiyoko.sequences.map["minecraft:gameplay/fishing"] as? Fishing ?: return
 
         val actual = p.collectedItems.first()
@@ -404,8 +487,11 @@ class MinecraftMixin {
     }
 
     private fun resolveBarter(p: PendingPiglinBarter) {
-        val actual = p.collectedItems.firstOrNull() ?: return
+        if (Chiyoko.configManager.config.getOverlay("minecraft:gameplay/piglin_bartering").tracked != true) return
+
         val barter = Chiyoko.sequences.map["minecraft:gameplay/piglin_bartering"] as? PiglinBartering ?: return
+
+        val actual = p.collectedItems.firstOrNull() ?: return
 
         if (!barter.lootTable.any { it.item.item == actual.item }) return
 
@@ -430,35 +516,39 @@ class MinecraftMixin {
     }
 
 
-    private fun matchesPrediction(actual: List<ItemStack>, predicted: List<ItemStack>): Boolean {
-        fun List<ItemStack>.toDropMap() = associate { it.item to it.count }
-        return actual.toDropMap() == predicted.toDropMap()
-    }
-
-    private fun findMatchingState(
-        witherSkeleton: lgbt.faith.chiyoko.sequences.WitherSkeleton,
+    // bfs for shulkers and wither skeletons
+    private fun <T> findDesyncFix(
+        startXoro: Xoroshiro128PlusPlus,
+        maxDepth: Int,
         actualDrops: List<ItemStack>,
-        maxDepth: Int = 50,
-        looting: Int,
+        branchOptions: List<T>,
+        rollBranch: (Xoroshiro128PlusPlus, T) -> List<ItemStack>,
     ): Pair<Xoroshiro128PlusPlus, Int>? {
-        val queue = ArrayDeque<Triple<Xoroshiro128PlusPlus, Int, Int>>()
-        val visited = HashSet<Xoroshiro128PlusPlus.State>()
-        val startXoro = witherSkeleton.getRngCopy()
-        queue.add(Triple(startXoro.copy(), 0, 0))
-        visited.add(startXoro.toState())
+        for (depthLimit in 1..maxDepth) {
+            val queue = ArrayDeque<Triple<Xoroshiro128PlusPlus, Int, Int>>()
+            val visited = HashSet<Xoroshiro128PlusPlus.State>()
+            queue.add(Triple(startXoro.copy(), 0, 0))
+            visited.add(startXoro.toState())
 
-        while (queue.isNotEmpty()) {
-            val (current, depth, advancements) = queue.removeFirst()
-            for ((playerKilled, hasLooting) in listOf(false to false, true to false, true to true)) {
-                val next = current.copy()
-                val predicted = witherSkeleton.nextDrops(next, playerKilled, if (hasLooting) looting else 0)
-                val state = next.toState()
-                if (state in visited) continue
-                visited.add(state)
-                if (matchesPrediction(actualDrops, predicted)) return next to (advancements + 1)
-                if (depth + 1 < maxDepth) queue.add(Triple(next, depth + 1, advancements + 1))
+            while (queue.isNotEmpty()) {
+                val (current, depth, advancements) = queue.removeFirst()
+                if (depth >= depthLimit) continue
+                for (option in branchOptions) {
+                    val next = current.copy()
+                    val predicted = rollBranch(next, option)
+                    val state = next.toState()
+                    if (!visited.add(state)) continue
+                    if (matchesPrediction(actualDrops, predicted)) return next to (advancements + 1)
+                    queue.add(Triple(next, depth + 1, advancements + 1))
+                }
             }
         }
         return null
+    }
+
+    private fun matchesPrediction(actual: List<ItemStack>, predicted: List<ItemStack>): Boolean {
+        fun List<ItemStack>.toDropMap() =
+            groupBy { it.item }.mapValues { (_, stacks) -> stacks.sumOf { it.count } }
+        return actual.toDropMap() == predicted.toDropMap()
     }
 }

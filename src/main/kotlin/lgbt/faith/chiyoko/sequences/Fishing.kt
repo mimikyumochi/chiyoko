@@ -148,7 +148,7 @@ class Fishing : Sequence {
                 }
 
                 Items.ENCHANTED_BOOK -> {
-                    val enchants = EnchantFunctions.enchantWithLevels(rng, Enchantability.BOOK, EligibleEnchantments.BOOK, 30)
+                    val enchants = EnchantFunctions.enchantWithLevels(rng, Enchantability.BOOK, EligibleEnchantments.ENCHANT_TABLE, 30)
                     val stored = ItemEnchantments.Mutable(ItemEnchantments.EMPTY)
                     enchants.forEach { stored.set(it.enchantment, it.level) }
                     stack.set(DataComponents.STORED_ENCHANTMENTS, stored.toImmutable())

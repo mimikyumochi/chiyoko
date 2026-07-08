@@ -12,13 +12,16 @@ import kotlin.io.path.writer
 
 enum class OverlayRotation { HORIZONTAL, VERTICAL }
 
+enum class RollType { NextDrop, KillsUntilItem }
+
 data class OverlayConfig(
     var visible: Boolean = true,
     var rotation: OverlayRotation = OverlayRotation.VERTICAL,
     var reversed: Boolean = false,
     var advances: Int = 1,
-    var rollType: WitherSkeleton.RollType = WitherSkeleton.RollType.KillsUntilSkull,
-    var split: Boolean = false
+    var rollType: RollType? = RollType.KillsUntilItem,
+    var split: Boolean = false,
+    var tracked: Boolean? = false,
 )
 
 data class SequenceData(
@@ -104,6 +107,14 @@ class ChiyokoConfigManager {
             config = migrate(loadedConfig)
         } else {
             config = ChiyokoConfig()
+        }
+        config.overlays.values.forEach { overlay ->
+            if (overlay.rollType == null) {
+                overlay.rollType = RollType.KillsUntilItem
+            }
+            if (overlay.tracked == null) {
+                overlay.tracked = false
+            }
         }
 
         save()
