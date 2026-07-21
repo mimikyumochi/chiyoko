@@ -54,10 +54,10 @@ class ChiyokoOverlayEditor : Screen(Component.literal("chiyoko overlay editor"))
         addRenderableWidget(Button.builder(Component.literal("done")) {
             configManager.save()
             /*? if >=26.2 {*/
-            this.minecraft.gui.setScreen(ChiyokoConfigScreen())
-            /*?} else {*/
-            /*this.minecraft.setScreen(ChiyokoConfigScreen())
-            *//*?}*/
+            /*this.minecraft.gui.setScreen(ChiyokoConfigScreen())
+            *//*?} else {*/
+            this.minecraft.setScreen(ChiyokoConfigScreen())
+            /*?}*/
         }.bounds(width / 2 - 100, height - 27, 200, 20).build())
     }
 
@@ -92,10 +92,10 @@ class ChiyokoOverlayEditor : Screen(Component.literal("chiyoko overlay editor"))
         if (showPlus) {
             val plusButton = Button.builder(Component.literal("+")) {
                 /*? if >=26.2 {*/
-                this.minecraft.gui.setScreen(ChiyokoAddTrackerScreen(this))
-                /*?} else {*/
-                /*this.minecraft.setScreen(ChiyokoAddTrackerScreen(this))
-                *//*?}*/
+                /*this.minecraft.gui.setScreen(ChiyokoAddTrackerScreen(this))
+                *//*?} else {*/
+                this.minecraft.setScreen(ChiyokoAddTrackerScreen(this))
+                /*?}*/
             }.bounds(x, y, tabSize, tabSize)
                 .tooltip(Tooltip.create(Component.literal("add tracker")))
                 .build()
@@ -161,10 +161,10 @@ class ChiyokoOverlayEditor : Screen(Component.literal("chiyoko overlay editor"))
     override fun onClose() {
         configManager.save()
         /*? if >=26.2 {*/
-        this.minecraft.gui.setScreen(null)
-        /*?} else {*/
-        /*this.minecraft.setScreen(null)
-        *//*?}*/
+        /*this.minecraft.gui.setScreen(null)
+        *//*?} else {*/
+        this.minecraft.setScreen(null)
+        /*?}*/
     }
 
     override fun extractRenderState(graphics: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, a: Float) {
@@ -215,10 +215,10 @@ class ChiyokoAddTrackerScreen(private val parent: ChiyokoOverlayEditor) : Screen
                 configManager.config.updateOverlay(key) { tracked = true }
                 parent.selectedKey = key
                 /*? if >=26.2 {*/
-                this.minecraft.gui.setScreen(parent)
-                /*?} else {*/
-                /*this.minecraft.setScreen(parent)
-                *//*?}*/
+                /*this.minecraft.gui.setScreen(parent)
+                *//*?} else {*/
+                this.minecraft.setScreen(parent)
+                /*?}*/
                 parent.refreshUI()
             }.bounds(x, y, buttonSize, buttonSize)
                 .tooltip(Tooltip.create(Component.literal("track $readableName")))
@@ -230,19 +230,19 @@ class ChiyokoAddTrackerScreen(private val parent: ChiyokoOverlayEditor) : Screen
 
         addRenderableWidget(Button.builder(Component.literal("cancel")) {
             /*? if >=26.2 {*/
-            this.minecraft.gui.setScreen(parent)
-            /*?} else {*/
-            /*this.minecraft.setScreen(parent)
-            *//*?}*/
+            /*this.minecraft.gui.setScreen(parent)
+            *//*?} else {*/
+            this.minecraft.setScreen(parent)
+            /*?}*/
         }.bounds(width / 2 - 50, height - 35, 100, 20).build())
     }
 
     override fun onClose() {
         /*? if >=26.2 {*/
-        this.minecraft.gui.setScreen(parent)
-        /*?} else {*/
-        /*this.minecraft.setScreen(parent)
-        *//*?}*/
+        /*this.minecraft.gui.setScreen(parent)
+        *//*?} else {*/
+        this.minecraft.setScreen(parent)
+        /*?}*/
     }
 
     override fun extractRenderState(graphics: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, a: Float) {

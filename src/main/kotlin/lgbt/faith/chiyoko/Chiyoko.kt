@@ -1,142 +1,149 @@
-package lgbt.faith.chiyoko
+    package lgbt.faith.chiyoko
 
-import lgbt.faith.chiyoko.config.ChiyokoConfigManager
-import lgbt.faith.chiyoko.rand.RandomSupport
-import lgbt.faith.chiyoko.sequences.*
-import net.fabricmc.api.ClientModInitializer
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback
-import net.fabricmc.fabric.api.client.command.v2.ClientCommands
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
-import net.minecraft.client.Minecraft
-import net.minecraft.client.gui.components.toasts.SystemToast
-import net.minecraft.network.chat.Component
-import net.minecraft.world.level.storage.LevelResource
-import kotlin.io.path.name
+    import lgbt.faith.chiyoko.config.ChiyokoConfigManager
+    import lgbt.faith.chiyoko.rand.RandomSupport
+    import lgbt.faith.chiyoko.sequences.*
+    import net.fabricmc.api.ClientModInitializer
+    import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback
+    import net.fabricmc.fabric.api.client.command.v2.ClientCommands
+    import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
+    import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents
+    import net.minecraft.client.Minecraft
+    import net.minecraft.client.gui.components.toasts.SystemToast
+    import net.minecraft.network.chat.Component
+    import net.minecraft.world.level.storage.LevelResource
+    import kotlin.io.path.name
 
 
-val keys = listOf(
-    "minecraft:chests/trial_chambers/reward_ominous",
-    "minecraft:chests/trial_chambers/reward",
-    "minecraft:gameplay/piglin_bartering",
-    "minecraft:gameplay/fishing",
-    "minecraft:entities/wither_skeleton",
-    "minecraft:blocks/gravel",
-    "minecraft:entities/shulker"
-)
-data class Sequences(
-    val map: MutableMap<String, lgbt.faith.chiyoko.sequences.Sequence> = mutableMapOf()
-)
-private fun createSequence(key: String): lgbt.faith.chiyoko.sequences.Sequence? {
-    return when (key) {
-        "minecraft:chests/trial_chambers/reward_ominous" -> Vault(true)
-        "minecraft:chests/trial_chambers/reward" -> Vault(false)
-        "minecraft:gameplay/piglin_bartering" -> PiglinBartering()
-        "minecraft:gameplay/fishing" -> Fishing()
-        "minecraft:entities/wither_skeleton" -> WitherSkeleton()
-        "minecraft:blocks/gravel" -> Gravel()
-        "minecraft:entities/shulker" -> Shulker()
-        else -> null
+    val keys = listOf(
+        "minecraft:chests/trial_chambers/reward_ominous",
+        "minecraft:chests/trial_chambers/reward",
+        "minecraft:gameplay/piglin_bartering",
+        "minecraft:gameplay/fishing",
+        "minecraft:entities/wither_skeleton",
+        "minecraft:blocks/gravel",
+        "minecraft:entities/shulker"
+    )
+    data class Sequences(
+        val map: MutableMap<String, Sequence> = mutableMapOf()
+    )
+    private fun createSequence(key: String): Sequence? {
+        return when (key) {
+            "minecraft:chests/trial_chambers/reward_ominous" -> Vault(true)
+            "minecraft:chests/trial_chambers/reward" -> Vault(false)
+            "minecraft:gameplay/piglin_bartering" -> PiglinBartering()
+            "minecraft:gameplay/fishing" -> Fishing()
+            "minecraft:entities/wither_skeleton" -> WitherSkeleton()
+            "minecraft:blocks/gravel" -> Gravel()
+            "minecraft:entities/shulker" -> Shulker()
+            else -> null
+        }
     }
-}
 
-class Chiyoko : ClientModInitializer {
-    companion object {
-        val mc = Minecraft.getInstance()
+    class Chiyoko : ClientModInitializer {
+        companion object {
+            val mc = Minecraft.getInstance()
 
-        var loaded = false
-        var seed: Long = 0
-        var worldName: String = ""
-        lateinit var configManager: ChiyokoConfigManager
+            var xpSeed = 0
+            var firstEnchant = true
 
-        val sequences = Sequences()
+            var loaded = false
+            var seed: Long = 0
+            var worldName: String = ""
+            lateinit var configManager: ChiyokoConfigManager
 
-        fun changeWorldSeed() {
-            val worldData = configManager.config.worlds[worldName] ?: return
+            val sequences = Sequences()
 
-            for ((key, sequence) in sequences.map) {
+            fun changeWorldSeed() {
+                val worldData = configManager.config.worlds[worldName] ?: return
 
-                val seqData = worldData.sequences[key] ?: continue
-                val advances = seqData.advances.toInt()
+                for ((key, sequence) in sequences.map) {
 
-                val rng = RandomSupport().createSequence(seed, key)
-                rng.advance(advances)
+                    val seqData = worldData.sequences[key] ?: continue
+                    val advances = seqData.advances.toInt()
 
-                sequence.loadState(rng.seedLo, rng.seedHi)
+                    val rng = RandomSupport().createSequence(seed, key)
+                    rng.advance(advances)
 
-                configManager.updateSequence(worldName, seed, rng, key, 0)
+                    sequence.loadState(rng.seedLo, rng.seedHi)
+
+                    configManager.updateSequence(worldName, seed, rng, key, 0)
+                }
             }
         }
-    }
 
 
-    override fun onInitializeClient() {
-        ChiyokoComponents // force component to register
+        override fun onInitializeClient() {
+            ChiyokoComponents // force component to register
 
-        configManager = ChiyokoConfigManager()
-        configManager.load()
+            configManager = ChiyokoConfigManager()
+            configManager.load()
 
-        ClientCommandRegistrationCallback.EVENT.register { dispatcher, registryAccess  ->
-            dispatcher.register(
-                ClientCommands.literal("validateseed")
-                    .executes { context ->
-                        validateSeed(context)
-                    }
-            )
-        }
-
-        ClientTickEvents.END_CLIENT_TICK.register { client ->
-
-            if (configManager.wasReset) {
-                SystemToast.add(
-                    /*? if >=26.2 {*/
-                    client.gui.toastManager()
-                    /*?} else {*/
-                    /*client.toastManager
-                    *//*?}*/,
-                    SystemToast.SystemToastId.PERIODIC_NOTIFICATION,
-                    Component.literal("chiyoko config reset"),
-                    Component.literal("bug that affects advancements was found, world config purged.")
+            ClientCommandRegistrationCallback.EVENT.register { dispatcher, _  ->
+                dispatcher.register(
+                    ClientCommands.literal("validateseed")
+                        .executes { context ->
+                            validateSeed(context)
+                        }
                 )
-                configManager.wasReset = false
             }
 
-            val player = mc.player
-            if (player == null) {
+            ClientPlayConnectionEvents.DISCONNECT.register { _, _ ->
                 loaded = false
-                return@register
-            }
-            if (loaded) return@register
-            loaded = true
-            
-            var s = 0L
-            var w = ""
-            if (mc.currentServer == null) {
-                s = mc.singleplayerServer!!.worldGenSettings.options().seed()
-                w = mc.singleplayerServer!!.getWorldPath(LevelResource.ROOT).parent.name
-            }
-            else {
-                w = mc.currentServer!!.ip
-                s = configManager.config.worlds[w]?.worldSeed ?: 0
             }
 
-            seed = s
-            worldName = w
-            val worldData = configManager.config.worlds[worldName]
 
-            for (key in keys) {
+            ClientPlayConnectionEvents.JOIN.register { _, _, _ ->
+                loaded = true
+                firstEnchant = true
 
-                val sequence = createSequence(key) ?: continue
-                sequences.map[key] = sequence
+                var s: Long
+                var w: String
 
-                val saved = worldData?.sequences?.get(key)
+                if (mc.currentServer == null) {
+                    s = mc.singleplayerServer!!.worldGenSettings.options().seed()
+                    w = mc.singleplayerServer!!.getWorldPath(LevelResource.ROOT).parent.name
+                }
+                else {
+                    w = mc.currentServer!!.ip
+                    s = configManager.config.worlds[w]?.worldSeed ?: 0
+                }
 
-                if (saved != null) {
-                    sequence.loadState(saved.seedLo, saved.seedHi)
-                } else {
-                    sequence.init(seed)
-                    configManager.addSequence(worldName, seed, sequence.getRngCopy(), key)
+                seed = s
+                worldName = w
+                val worldData = configManager.config.worlds[worldName]
+
+                for (key in keys) {
+
+                    val sequence = createSequence(key) ?: continue
+                    sequences.map[key] = sequence
+
+                    val saved = worldData?.sequences?.get(key)
+
+                    if (saved != null) {
+                        sequence.loadState(saved.seedLo, saved.seedHi)
+                    } else {
+                        sequence.init(seed)
+                        configManager.addSequence(worldName, seed, sequence.getRngCopy(), key)
+                    }
+                }
+            }
+
+
+            ClientTickEvents.END_CLIENT_TICK.register { client ->
+                if (configManager.wasReset) {
+                    SystemToast.add(
+                        /*? if >=26.2 {*/
+                        /*client.gui.toastManager()
+                        *//*?} else {*/
+                        client.toastManager
+                        /*?}*/,
+                        SystemToast.SystemToastId.PERIODIC_NOTIFICATION,
+                        Component.literal("chiyoko config reset"),
+                        Component.literal("bug that affects advancements was found, world config purged.")
+                    )
+                    configManager.wasReset = false
                 }
             }
         }
     }
-}

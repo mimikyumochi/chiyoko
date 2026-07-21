@@ -1,5 +1,8 @@
 package lgbt.faith.chiyoko.functions
 
+import net.minecraft.world.item.Item
+import net.minecraft.world.item.Items
+
 object Enchantability {
     const val WOOD        = 15
     const val STONE       = 5
@@ -15,6 +18,83 @@ object Enchantability {
     const val BOW         = 1
     const val CROSSBOW    = 1
     const val FISHING_ROD = 1
+    fun getEnchantability(item: Item): Int {
+        return when (item) {
+            Items.WOODEN_SWORD,
+            Items.WOODEN_AXE,
+            Items.WOODEN_PICKAXE,
+            Items.WOODEN_SHOVEL,
+            Items.WOODEN_HOE -> WOOD
+
+            Items.STONE_SWORD,
+            Items.STONE_AXE,
+            Items.STONE_PICKAXE,
+            Items.STONE_SHOVEL,
+            Items.STONE_HOE -> STONE
+
+            Items.IRON_SWORD,
+            Items.IRON_AXE,
+            Items.IRON_PICKAXE,
+            Items.IRON_SHOVEL,
+            Items.IRON_HOE,
+            Items.IRON_HELMET,
+            Items.IRON_CHESTPLATE,
+            Items.IRON_LEGGINGS,
+            Items.IRON_BOOTS -> IRON
+
+            Items.CHAINMAIL_HELMET,
+            Items.CHAINMAIL_CHESTPLATE,
+            Items.CHAINMAIL_LEGGINGS,
+            Items.CHAINMAIL_BOOTS -> CHAIN
+
+            Items.GOLDEN_SWORD,
+            Items.GOLDEN_AXE,
+            Items.GOLDEN_PICKAXE,
+            Items.GOLDEN_SHOVEL,
+            Items.GOLDEN_HOE,
+            Items.GOLDEN_HELMET,
+            Items.GOLDEN_CHESTPLATE,
+            Items.GOLDEN_LEGGINGS,
+            Items.GOLDEN_BOOTS -> GOLD
+
+            Items.DIAMOND_SWORD,
+            Items.DIAMOND_AXE,
+            Items.DIAMOND_PICKAXE,
+            Items.DIAMOND_SHOVEL,
+            Items.DIAMOND_HOE,
+            Items.DIAMOND_HELMET,
+            Items.DIAMOND_CHESTPLATE,
+            Items.DIAMOND_LEGGINGS,
+            Items.DIAMOND_BOOTS -> DIAMOND
+
+            Items.NETHERITE_SWORD,
+            Items.NETHERITE_AXE,
+            Items.NETHERITE_PICKAXE,
+            Items.NETHERITE_SHOVEL,
+            Items.NETHERITE_HOE,
+            Items.NETHERITE_HELMET,
+            Items.NETHERITE_CHESTPLATE,
+            Items.NETHERITE_LEGGINGS,
+            Items.NETHERITE_BOOTS -> NETHERITE
+
+            Items.LEATHER_HELMET,
+            Items.LEATHER_CHESTPLATE,
+            Items.LEATHER_LEGGINGS,
+            Items.LEATHER_BOOTS -> LEATHER
+
+            Items.TURTLE_HELMET -> TURTLE
+
+            Items.BOW -> BOW
+            Items.CROSSBOW -> CROSSBOW
+            Items.TRIDENT -> TRIDENT
+            Items.FISHING_ROD -> FISHING_ROD
+
+            Items.BOOK,
+            Items.ENCHANTED_BOOK -> BOOK
+
+            else -> 0
+        }
+    }
 }
 
 data class EnchantmentInstance(val def: Enchantment, val level: Int)
@@ -41,7 +121,6 @@ data class Enchantment(
     }
 
     companion object {
-
         val ALL: List<Enchantment> = listOf(
             Enchantment("aqua_affinity", weight = 2, maxLevel = 1, minCostBase = 1, minCostPerLevel = 0, maxCostBase = 41, maxCostPerLevel = 0, exclusiveSet = null),
             Enchantment("bane_of_arthropods", weight = 5, maxLevel = 5, minCostBase = 5, minCostPerLevel = 8, maxCostBase = 25, maxCostPerLevel = 8, exclusiveSet = "damage"),
@@ -98,7 +177,20 @@ data class Enchantment(
 }
 
 
+
 object EligibleEnchantments {
+    val LEGACY_REGISTRY_ORDER = listOf(
+        "protection", "fire_protection", "feather_falling", "blast_protection",
+        "projectile_protection", "respiration", "aqua_affinity", "thorns",
+        "depth_strider", "sharpness", "smite", "bane_of_arthropods",
+        "knockback", "fire_aspect", "looting", "sweeping_edge",
+        "efficiency", "silk_touch", "unbreaking", "fortune",
+        "power", "punch", "flame", "infinity",
+        "luck_of_the_sea", "lure", "loyalty", "impaling",
+        "riptide", "channeling", "multishot", "quick_charge",
+        "piercing", "density", "breach", "lunge"
+    )
+
     val SWORD = setOf(
         "sharpness", "smite", "bane_of_arthropods", "knockback",
         "fire_aspect", "looting", "sweeping_edge", "unbreaking", "mending", "vanishing_curse",
@@ -149,5 +241,85 @@ object EligibleEnchantments {
         "knockback", "unbreaking", "mending", "vanishing_curse",
     )
     val BOOK = Enchantment.ALL.map { it.id }.toSet()
-    val ENCHANT_TABLE = BOOK.filter { it !in listOf("wind_burst", "soul_speed", "swift_sneak")}.toSet() // these are exclusive to certain structures
+    val FISHING = BOOK.filter { it !in listOf("wind_burst", "soul_speed", "swift_sneak")}.toSet() // these are exclusive to certain structures
+    val ENCHANT_TABLE = BOOK.filter { it !in listOf("wind_burst", "soul_speed", "swift_sneak", "mending", "vanishing_curse", "binding_curse", "frost_walker")}.toSet() // these are treasure
+
+    fun getEligibleEnchantments(item: Item): Set<String> {
+        return when (item) {
+            Items.ENCHANTED_BOOK,
+            Items.BOOK -> BOOK
+
+            Items.WOODEN_SWORD,
+            Items.STONE_SWORD,
+            Items.IRON_SWORD,
+            Items.GOLDEN_SWORD,
+            Items.DIAMOND_SWORD,
+            Items.NETHERITE_SWORD -> SWORD
+
+            Items.WOODEN_AXE,
+            Items.STONE_AXE,
+            Items.IRON_AXE,
+            Items.GOLDEN_AXE,
+            Items.DIAMOND_AXE,
+            Items.NETHERITE_AXE -> AXE
+
+            Items.WOODEN_PICKAXE,
+            Items.STONE_PICKAXE,
+            Items.IRON_PICKAXE,
+            Items.GOLDEN_PICKAXE,
+            Items.DIAMOND_PICKAXE,
+            Items.NETHERITE_PICKAXE -> PICKAXE
+
+            Items.WOODEN_SHOVEL,
+            Items.STONE_SHOVEL,
+            Items.IRON_SHOVEL,
+            Items.GOLDEN_SHOVEL,
+            Items.DIAMOND_SHOVEL,
+            Items.NETHERITE_SHOVEL -> SHOVEL
+
+            Items.WOODEN_HOE,
+            Items.STONE_HOE,
+            Items.IRON_HOE,
+            Items.GOLDEN_HOE,
+            Items.DIAMOND_HOE,
+            Items.NETHERITE_HOE -> HOE
+
+            Items.BOW -> BOW
+            Items.CROSSBOW -> CROSSBOW
+            Items.TRIDENT -> TRIDENT
+            Items.FISHING_ROD -> FISHING_ROD
+            Items.MACE -> MACE
+
+            Items.LEATHER_HELMET,
+            Items.CHAINMAIL_HELMET,
+            Items.IRON_HELMET,
+            Items.GOLDEN_HELMET,
+            Items.DIAMOND_HELMET,
+            Items.NETHERITE_HELMET,
+            Items.TURTLE_HELMET -> HELMET
+
+            Items.LEATHER_CHESTPLATE,
+            Items.CHAINMAIL_CHESTPLATE,
+            Items.IRON_CHESTPLATE,
+            Items.GOLDEN_CHESTPLATE,
+            Items.DIAMOND_CHESTPLATE,
+            Items.NETHERITE_CHESTPLATE -> CHESTPLATE
+
+            Items.LEATHER_LEGGINGS,
+            Items.CHAINMAIL_LEGGINGS,
+            Items.IRON_LEGGINGS,
+            Items.GOLDEN_LEGGINGS,
+            Items.DIAMOND_LEGGINGS,
+            Items.NETHERITE_LEGGINGS -> LEGGINGS
+
+            Items.LEATHER_BOOTS,
+            Items.CHAINMAIL_BOOTS,
+            Items.IRON_BOOTS,
+            Items.GOLDEN_BOOTS,
+            Items.DIAMOND_BOOTS,
+            Items.NETHERITE_BOOTS -> BOOTS
+
+            else -> emptySet()
+        }
+    }
 }

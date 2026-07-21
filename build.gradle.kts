@@ -6,10 +6,9 @@ plugins {
     id("org.jetbrains.kotlin.jvm") version "2.3.20"
 }
 
-// Helper function to safely unwrap Stonecutter's lazy Provider objects
 fun resolveProperty(name: String, fallback: String): String {
     val prop = project.findProperty(name) ?: return fallback
-    return if (prop is org.gradle.api.provider.Provider<*>) {
+    return if (prop is Provider<*>) {
         prop.orNull?.toString() ?: fallback
     } else {
         prop.toString()
@@ -37,6 +36,7 @@ dependencies {
     implementation("com.google.guava:guava:33.0.0-jre")
 
     minecraft("com.mojang:minecraft:${resolveProperty("minecraft_version", "26.2")}")
+
     implementation("net.fabricmc:fabric-loader:${resolveProperty("loader_version", "0.19.3")}")
 
     implementation("net.fabricmc.fabric-api:fabric-api:${resolveProperty("fabric_api_version", "0.154.2+26.2")}")

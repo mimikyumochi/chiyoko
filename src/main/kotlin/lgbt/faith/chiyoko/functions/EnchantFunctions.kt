@@ -1,5 +1,7 @@
 package lgbt.faith.chiyoko.functions
 
+import lgbt.faith.chiyoko.functions.EligibleEnchantments.LEGACY_REGISTRY_ORDER
+import lgbt.faith.chiyoko.rand.Rand
 import lgbt.faith.chiyoko.rand.Xoroshiro128PlusPlus
 import lgbt.faith.chiyoko.sendOverlay
 import net.minecraft.client.Minecraft
@@ -58,41 +60,51 @@ object EnchantFunctions {
     // returns custom enchantment object
     private fun getEnchantmentObject(id: String) =  Enchantment.ALL.find { it.id == id }
 
-    fun enchantRandomly(rng: Xoroshiro128PlusPlus, options: List<String>): MinecraftEnchantmentInstance? {
+
+    fun enchantRandomlyCore(nextInt: (Int) -> Int, options: List<String>): MinecraftEnchantmentInstance? {
 
         val validHolders: List<Enchantment> =
             options.mapNotNull { getEnchantmentObject(it) }
+
         sendOverlay("$validHolders")
         if (validHolders.isEmpty()) return null
 
-        val holder = validHolders[rng.nextInt(validHolders.size)]
+        val holder = validHolders[nextInt(validHolders.size)]
 
         val min = holder.minLevel
         val max = holder.maxLevel
-        val level = if (min >= max) min else min + rng.nextInt(max - min + 1)
+        val level = if (min >= max) min else min + nextInt(max - min + 1)
 
         val mcHolder = enchantmentIdentifierToHolder(holder.id) ?: return null
 
         return MinecraftEnchantmentInstance(mcHolder, level)
     }
 
-    fun enchantWithLevels(rng: Xoroshiro128PlusPlus, enchantability: Int, eligibleIds: Set<String>, baseCost: Int = 30): List<MinecraftEnchantmentInstance> {
+    fun enchantRandomly(rng: Xoroshiro128PlusPlus, options: List<String>) =
+        enchantRandomlyCore(rng::nextInt, options)
 
-        var cost = baseCost + (1 + rng.nextInt(enchantability / 4 + 1) + rng.nextInt(enchantability / 4 + 1))
-        val randomSpan = (rng.nextFloat() + rng.nextFloat() - 1.0f) * 0.15f
+    fun enchantRandomly(rng: Rand, options: List<String>) =
+        enchantRandomlyCore(rng::nextInt, options)
+
+
+
+    fun enchantWithLevelsCore(nextInt: (Int) -> Int, nextFloat: () -> Float, enchantability: Int, eligibleIds: Set<String>, baseCost: Int = 30, legacyOrder: Boolean): List<MinecraftEnchantmentInstance> {
+
+        var cost = baseCost + (1 + nextInt(enchantability / 4 + 1) + nextInt(enchantability / 4 + 1))
+        val randomSpan = (nextFloat() + nextFloat() - 1.0f) * 0.15f
 
         cost = Math.min(Math.max(Math.round(cost + cost * randomSpan), 1), Int.MAX_VALUE);
 
-        val available = getAvailableEnchantments(cost, eligibleIds).toMutableList()
+        val available = getAvailableEnchantments(cost, eligibleIds, legacyOrder).toMutableList()
         val results = mutableListOf<EnchantmentInstance>()
 
         if (available.isNotEmpty()) {
-            results.add(weightedPick(rng, available))
+            results.add(weightedPick(nextInt, available))
 
-            while (rng.nextInt(50) <= cost) {
+            while (nextInt(50) <= cost) {
                 if (results.isNotEmpty()) filterCompatible(available, results.last())
                 if (available.isEmpty()) break
-                results.add(weightedPick(rng, available))
+                results.add(weightedPick(nextInt, available))
                 cost /= 2
             }
         }
@@ -102,12 +114,29 @@ object EnchantFunctions {
             if (mcHolder != null) MinecraftEnchantmentInstance(mcHolder, instance.level) else null
         }
     }
+    fun enchantWithLevels(rng: Xoroshiro128PlusPlus, enchantability: Int, eligibleIds: Set<String>, baseCost: Int = 30, legacyOrder: Boolean = false)
+        = enchantWithLevelsCore(rng::nextInt, rng::nextFloat, enchantability, eligibleIds, baseCost, legacyOrder)
+
+    fun enchantWithLevels(rng: Rand, enchantability: Int, eligibleIds: Set<String>, baseCost: Int = 30, legacyOrder: Boolean = true)
+        = enchantWithLevelsCore(rng::nextInt, rng::nextFloat, enchantability, eligibleIds, baseCost, legacyOrder)
+
 
     private fun getAvailableEnchantments(
         cost: Int,
         eligibleIds: Set<String>,
+        legacyOrder: Boolean
     ): List<EnchantmentInstance> {
-        return Enchantment.ALL
+
+        val allEnchants = if (legacyOrder) {
+            Enchantment.ALL.sortedBy { def ->
+                val index = LEGACY_REGISTRY_ORDER.indexOf(def.id)
+                if (index == -1) Int.MAX_VALUE else index
+            }
+        } else {
+            Enchantment.ALL
+        }
+
+        return allEnchants
             .filter { it.id in eligibleIds }
             .mapNotNull { def ->
                 (def.maxLevel downTo def.minLevel)
@@ -117,11 +146,11 @@ object EnchantFunctions {
     }
 
     private fun weightedPick(
-        rng: Xoroshiro128PlusPlus,
+        nextInt: (Int) -> Int,
         list: List<EnchantmentInstance>,
     ): EnchantmentInstance {
         val total = list.sumOf { it.def.weight }
-        val roll = rng.nextInt(total)
+        val roll = nextInt(total)
         var acc = 0
         for (e in list) {
             acc += e.def.weight

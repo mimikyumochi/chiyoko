@@ -12,7 +12,10 @@
     "FishingHookAccessor",
     "MultiPlayerGameModeMixin",
     "MinecraftMixin",
-    "LevelMixin"
+    "LevelMixin",
+    "EnchantmentScreenMixin",
+    "EnchantmentMenuMixin",
+    "AbstractContainerScreenAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

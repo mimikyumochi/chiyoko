@@ -5,6 +5,7 @@ import lgbt.faith.chiyoko.PendingGravelBreak
 import net.minecraft.client.Minecraft
 import net.minecraft.core.BlockPos
 import net.minecraft.core.registries.Registries
+import net.minecraft.network.syncher.EntityDataAccessor
 import net.minecraft.world.item.enchantment.EnchantmentHelper
 import net.minecraft.world.item.enchantment.Enchantments
 import net.minecraft.world.level.Level
