@@ -62,7 +62,7 @@
                     val seqData = worldData.sequences[key] ?: continue
                     val advances = seqData.advances.toInt()
 
-                    val rng = RandomSupport().createSequence(seed, key)
+                    val rng = RandomSupport.createSequence(seed, key)
                     rng.advance(advances)
 
                     sequence.loadState(rng.seedLo, rng.seedHi)
