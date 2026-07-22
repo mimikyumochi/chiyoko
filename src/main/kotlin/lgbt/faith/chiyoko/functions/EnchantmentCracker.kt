@@ -6,7 +6,6 @@ import lgbt.faith.chiyoko.sendOverlay
 import net.minecraft.client.Minecraft
 import net.minecraft.core.registries.Registries
 import net.minecraft.world.inventory.EnchantmentMenu
-import net.minecraft.world.item.Items
 
 object EnchantmentCracker {
     var lastLower16: Int = -1
@@ -19,9 +18,9 @@ object EnchantmentCracker {
         val baseCost = rand.nextInt(8) + 1 + (b shr 1) + rand.nextInt(b + 1)
 
         var finalCost = when (slot) {
-            0 -> Math.max(baseCost / 3, 1)
+            0 -> maxOf(baseCost / 3, 1)
             1 -> (baseCost * 2) / 3 + 1
-            else -> Math.max(baseCost, b * 2)
+            else -> maxOf(baseCost, b * 2)
         }
 
         if (finalCost < slot + 1) {
@@ -59,10 +58,8 @@ object EnchantmentCracker {
         val level = mc.level ?: return lower16
         val registry = level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).asHolderIdMap()
 
-        val candidatesToTest = if (possibleSeeds.isEmpty()) {
+        val candidatesToTest = possibleSeeds.ifEmpty {
             (0..65535).map { (it shl 16) or base16 }
-        } else {
-            possibleSeeds
         }
 
         val newMatches = mutableListOf<Pair<Int, Int>>() // Pair<candidateSeed, bookshelfCount>
@@ -109,7 +106,7 @@ object EnchantmentCracker {
 
                 val clueIndex = rand.nextInt(results.size)
                 val predictedClue = results[clueIndex]
-                val predictedId = registry.getId(predictedClue.enchantment) ?: -1
+                val predictedId = registry.getId(predictedClue.enchantment)
 
                 if (predictedId != menu.enchantClue[i] || predictedClue.level != menu.levelClue[i]) {
                     isMatch = false

@@ -3,7 +3,6 @@ package lgbt.faith.chiyoko.config
 import com.google.gson.GsonBuilder
 import lgbt.faith.chiyoko.Chiyoko
 import lgbt.faith.chiyoko.rand.Xoroshiro128PlusPlus
-import lgbt.faith.chiyoko.sequences.WitherSkeleton
 import net.fabricmc.loader.api.FabricLoader
 import kotlin.io.path.createDirectories
 import kotlin.io.path.exists

@@ -52,7 +52,7 @@ class ChiyokoRenderer {
     private val gridSize = 20
     private val border = 1
 
-    private fun enchantHolders(level: Level): Pair<Holder<Enchantment>, Holder<Enchantment>>? {
+    private fun enchantHolders(level: Level): Pair<Holder<Enchantment>, Holder<Enchantment>> {
         if (cachedRegistryLevel === level && cachedLootingHolder != null && cachedFortuneHolder != null) {
             return cachedLootingHolder!! to cachedFortuneHolder!!
         }
@@ -91,7 +91,7 @@ class ChiyokoRenderer {
         val player = mc.player ?: return
         val level = mc.level ?: return
 
-        val (lootingHolder, fortuneHolder) = enchantHolders(level) ?: return
+        val (lootingHolder, fortuneHolder) = enchantHolders(level)
 
         val mouseX = mc.mouseHandler.xpos() * mc.window.guiScaledWidth / mc.window.screenWidth
         val mouseY = mc.mouseHandler.ypos() * mc.window.guiScaledHeight / mc.window.screenHeight
@@ -160,11 +160,11 @@ class ChiyokoRenderer {
             } else {
                 val rolled: List<SubList> = when (sequence) {
                     is Vault -> if (overlay.split) {
-                        sequence.rollEach(overlay.advances).mapIndexed { i, items ->
+                        sequence.peekEach(overlay.advances).mapIndexed { i, items ->
                             SubList((gridSize - 2) * i * perpendicular[0], (gridSize - 2) * i * perpendicular[1], items)
                         }
                     } else {
-                        listOf(SubList(0, 0, sequence.roll(overlay.advances)))
+                        listOf(SubList(0, 0, sequence.peek(overlay.advances)))
                     }
                     is PiglinBartering -> listOf(SubList(0, 0, sequence.roll(overlay.advances)))
                     is WitherSkeleton -> {
@@ -175,7 +175,7 @@ class ChiyokoRenderer {
                         val drops = sequence.roll(overlay.rollType ?: RollType.KillsUntilItem, lootingLevel)
                         listOf(SubList(0, 0, drops.ifEmpty { listOf(ItemStack.EMPTY) }))
                     }
-                    is Fishing -> listOf(SubList(0, 0, sequence.roll(overlay.advances, luck, isOpenWater, isJungle)))
+                    is Fishing -> listOf(SubList(0, 0, sequence.peek(overlay.advances, luck, isOpenWater, isJungle)))
                     is Gravel  -> listOf(SubList(0, 0, sequence.roll(overlay.advances, fortuneLevel)))
 
                     else -> emptyList()
@@ -203,7 +203,7 @@ class ChiyokoRenderer {
         if (hoveredItem != null) {
             val tickDelta = mc.deltaTracker.gameTimeDeltaTicks
             graphics.setTooltipForNextFrame(mc.font, hoveredItem, mx, my)
-            graphics.extractDeferredElements(mx, my, tickDelta);
+            graphics.extractDeferredElements(mx, my, tickDelta)
         }
     }
 }

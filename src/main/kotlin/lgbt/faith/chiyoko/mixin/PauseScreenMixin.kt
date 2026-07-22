@@ -1,11 +1,9 @@
 package lgbt.faith.chiyoko.mixin
 
-import lgbt.faith.chiyoko.Chiyoko
 import lgbt.faith.chiyoko.gui.ChiyokoConfigScreen
 import lgbt.faith.chiyoko.gui.ChiyokoRenderer
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
-import net.minecraft.client.gui.components.Button
 import net.minecraft.client.gui.components.Button.builder
 import net.minecraft.client.gui.components.Renderable
 import net.minecraft.client.gui.components.events.GuiEventListener

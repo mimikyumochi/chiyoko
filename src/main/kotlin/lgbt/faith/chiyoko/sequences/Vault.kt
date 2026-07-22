@@ -5,7 +5,6 @@ import lgbt.faith.chiyoko.functions.EligibleEnchantments
 import lgbt.faith.chiyoko.functions.EnchantFunctions
 import lgbt.faith.chiyoko.functions.Enchantability
 import lgbt.faith.chiyoko.functions.ItemFunctions
-import lgbt.faith.chiyoko.rand.RandomSupport
 import lgbt.faith.chiyoko.rand.Xoroshiro128PlusPlus
 import net.minecraft.core.component.DataComponents
 import net.minecraft.util.Mth
@@ -17,94 +16,58 @@ import net.minecraft.world.item.component.OminousBottleAmplifier
 import net.minecraft.world.item.enchantment.ItemEnchantments
 
 class Vault(val isOminous: Boolean) : Sequence {
-    private lateinit var xoroshiro: Xoroshiro128PlusPlus
-
-    val lootTable = if (isOminous) {
-        OMINOUS_COMMON + OMINOUS_RARE + OMINOUS_UNIQUE
-    } else {
-        NORMAL_COMMON + NORMAL_RARE + NORMAL_UNIQUE
-    }
-
-    override val key = if (isOminous) "minecraft:chests/trial_chambers/reward_ominous" else "minecraft:chests/trial_chambers/reward"
-
-    override fun init(worldSeed: Long) {
-        xoroshiro = RandomSupport().createSequence(worldSeed, key)
-    }
-    override fun loadState(seedLo: Long, seedHi: Long) {
-        xoroshiro = Xoroshiro128PlusPlus(seedLo, seedHi)
-    }
-    override fun getRngCopy(): Xoroshiro128PlusPlus {
-        return xoroshiro.copy()
-    }
+    override lateinit var xoroshiro: Xoroshiro128PlusPlus
 
     private val COMMON = if (isOminous) OMINOUS_COMMON else NORMAL_COMMON
     private val RARE = if (isOminous) OMINOUS_RARE else NORMAL_RARE
     private val UNIQUE = if (isOminous) OMINOUS_UNIQUE else NORMAL_UNIQUE
 
+    val lootTable = COMMON + RARE + UNIQUE
+
+    override val key = if (isOminous) "minecraft:chests/trial_chambers/reward_ominous" else "minecraft:chests/trial_chambers/reward"
+
     fun advance(amount: Int) {
         repeat(amount) {
-            val useRare = xoroshiro.nextInt(10) < 8
-            val item = if (useRare) { rollWeighted(xoroshiro, RARE).copy() } else rollWeighted(xoroshiro, COMMON).copy()
-            applyFunctions(xoroshiro, item)
-
-            val rolls = xoroshiro.nextInt(3) + 1
-            repeat(rolls) {
-                applyFunctions(xoroshiro, rollWeighted(xoroshiro, COMMON).copy())
-            }
-            val chance = if (isOminous) 0.75f else 0.25f
-            if (xoroshiro.nextFloat() < chance) {
-                applyFunctions(xoroshiro, rollWeighted(xoroshiro, UNIQUE).copy())
-            }
-
+            generateLootPool(xoroshiro)
         }
     }
 
-    fun roll(amount: Int, merged: Boolean = true): List<ItemStack>  {
+    fun peek(amount: Int, merged: Boolean = true): List<ItemStack> {
         val drops = mutableListOf<ItemStack>()
         val rng = xoroshiro.copy()
         repeat(amount) {
-            val local = mutableListOf<ItemStack>()
-
-            val useRare = rng.nextInt(10) < 8
-            val item = if (useRare) { rollWeighted(rng, RARE).copy() } else rollWeighted(rng, COMMON).copy()
-            local += applyFunctions(rng, item)
-
-            val rolls = rng.nextInt(3) + 1
-            repeat(rolls) {
-                local += applyFunctions(rng, rollWeighted(rng, COMMON).copy())
-            }
-            val chance = if (isOminous) 0.75f else 0.25f
-            if (rng.nextFloat() < chance) {
-                local += applyFunctions(rng, rollWeighted(rng, UNIQUE).copy())
-            }
-
+            val local = generateLootPool(rng)
             drops += if (merged) mergeStacks(local) else local
         }
         return drops
     }
 
-    fun rollEach(amount: Int): List<List<ItemStack>> {
+    fun peekEach(amount: Int): List<List<ItemStack>> {
         val rng = xoroshiro.copy()
         return List(amount) {
-            val local = mutableListOf<ItemStack>()
-
-            val useRare = rng.nextInt(10) < 8
-            val item = if (useRare) rollWeighted(rng, RARE).copy() else rollWeighted(rng, COMMON).copy()
-            local += applyFunctions(rng, item)
-
-            val rolls = rng.nextInt(3) + 1
-            repeat(rolls) {
-                local += applyFunctions(rng, rollWeighted(rng, COMMON).copy())
-            }
-            val chance = if (isOminous) 0.75f else 0.25f
-            if (rng.nextFloat() < chance) {
-                local += applyFunctions(rng, rollWeighted(rng, UNIQUE).copy())
-            }
-
-            mergeStacks(local)
+            mergeStacks(generateLootPool(rng))
         }
     }
 
+    private fun generateLootPool(rng: Xoroshiro128PlusPlus): List<ItemStack> {
+        val local = mutableListOf<ItemStack>()
+
+        val useRare = rng.nextInt(10) < 8
+        val item = if (useRare) rollWeighted(rng, RARE).copy() else rollWeighted(rng, COMMON).copy()
+        local += applyFunctions(rng, item)
+
+        val rolls = rng.nextInt(3) + 1
+        repeat(rolls) {
+            local += applyFunctions(rng, rollWeighted(rng, COMMON).copy())
+        }
+
+        val chance = if (isOminous) 0.75f else 0.25f
+        if (rng.nextFloat() < chance) {
+            local += applyFunctions(rng, rollWeighted(rng, UNIQUE).copy())
+        }
+
+        return local
+    }
 
     private fun rollWeighted(rng: Xoroshiro128PlusPlus, table: List<Pair<ItemStack, Int>>): ItemStack {
         var roll = rng.nextInt(table.sumOf { it.second })

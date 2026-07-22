@@ -7,42 +7,12 @@ import lgbt.faith.chiyoko.sendOverlay
 import net.minecraft.client.Minecraft
 import net.minecraft.core.Holder
 import net.minecraft.core.registries.Registries
-import net.minecraft.network.chat.Component
 import net.minecraft.resources.Identifier
-import net.minecraft.tags.ItemTags
-import net.minecraft.world.item.Items
+import kotlin.math.roundToLong
 import net.minecraft.world.item.enchantment.Enchantment as MinecraftEnchantment
 import net.minecraft.world.item.enchantment.EnchantmentInstance as MinecraftEnchantmentInstance
 
 object EnchantFunctions {
-
-    fun logRegistryOrderForHeldItem() {
-        val mc = Minecraft.getInstance()
-        val player = mc.player ?: return
-        val registries = player.level().registryAccess()
-
-        val enchantmentLookup = registries.lookupOrThrow(Registries.ENCHANTMENT)
-        val heldItem = player.mainHandItem
-
-        if (heldItem.isEmpty) return
-
-        println("// --- Valid Enchantments for ${heldItem.item} (Exact Registry Order) ---")
-
-        enchantmentLookup.listElements().forEach { holder ->
-            val enchantment = holder.value()
-            val key = holder.key().identifier()
-
-            val supported = enchantment.definition().supportedItems()
-            val validForItem = heldItem.`is`(supported)
-                    || heldItem.`is`(Items.BOOK)
-                    || heldItem.`is`(Items.ENCHANTED_BOOK)
-
-            if (validForItem) {
-                println("$key (max level: ${enchantment.getMaxLevel()})")
-            }
-        }
-    }
-
 
     fun enchantmentIdentifierToHolder(id: String): Holder<MinecraftEnchantment>? {
         val mc = Minecraft.getInstance()
@@ -93,7 +63,7 @@ object EnchantFunctions {
         var cost = baseCost + (1 + nextInt(enchantability / 4 + 1) + nextInt(enchantability / 4 + 1))
         val randomSpan = (nextFloat() + nextFloat() - 1.0f) * 0.15f
 
-        cost = Math.min(Math.max(Math.round(cost + cost * randomSpan), 1), Int.MAX_VALUE);
+        cost = (cost + cost * randomSpan).roundToLong().coerceIn(1L, Int.MAX_VALUE.toLong()).toInt()
 
         val available = getAvailableEnchantments(cost, eligibleIds, legacyOrder).toMutableList()
         val results = mutableListOf<EnchantmentInstance>()

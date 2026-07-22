@@ -1,27 +1,16 @@
 package lgbt.faith.chiyoko.sequences
 
 import lgbt.faith.chiyoko.config.RollType
-import lgbt.faith.chiyoko.rand.RandomSupport
 import lgbt.faith.chiyoko.rand.Xoroshiro128PlusPlus
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
 import kotlin.math.roundToInt
 
 class WitherSkeleton : Sequence {
-    private lateinit var xoroshiro: Xoroshiro128PlusPlus
+    override lateinit var xoroshiro: Xoroshiro128PlusPlus
 
     override val key = "minecraft:entities/wither_skeleton"
 
-    override fun init(worldSeed: Long) {
-        xoroshiro = RandomSupport().createSequence(worldSeed, key)
-    }
-
-    override fun loadState(seedLo: Long, seedHi: Long) {
-        xoroshiro = Xoroshiro128PlusPlus(seedLo, seedHi)
-    }
-    override fun getRngCopy(): Xoroshiro128PlusPlus {
-        return xoroshiro.copy()
-    }
 
     fun advance(amount: Int, playerKilled: Boolean, lootingLevel: Int) {
         repeat(amount) {

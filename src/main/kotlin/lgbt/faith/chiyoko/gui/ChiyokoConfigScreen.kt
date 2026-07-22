@@ -85,7 +85,6 @@ class ChiyokoConfigScreen : Screen(Component.literal("chiyoko config")) {
             .build()
         )
         // row 3 [close (75px)] - total 75px, centred
-        val row3totalWidth = row2TotalWidth
         val row3StartX = centerX - (editBtnWidth/2)
         val row3Y = row2Y + btnHeight + gap
 

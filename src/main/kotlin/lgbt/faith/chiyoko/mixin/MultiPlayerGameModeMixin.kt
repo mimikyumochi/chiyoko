@@ -6,7 +6,6 @@ import net.minecraft.client.multiplayer.MultiPlayerGameMode
 import net.minecraft.client.player.LocalPlayer
 import net.minecraft.core.BlockPos
 import net.minecraft.core.registries.Registries
-import net.minecraft.server.level.ServerLevel
 import net.minecraft.tags.BiomeTags
 import net.minecraft.world.InteractionHand
 import net.minecraft.world.InteractionResult
@@ -60,7 +59,7 @@ class MultiPlayerGameModeMixin {
         val vault = if (isOminous) Chiyoko.sequences.map["minecraft:chests/trial_chambers/reward_ominous"] as? Vault ?: return
         else           Chiyoko.sequences.map["minecraft:chests/trial_chambers/reward"] as? Vault ?: return
 
-        val predictedItems = vault.roll(1)
+        val predictedItems = vault.peek(1)
         vault.advance(1)
         Chiyoko.configManager.updateSequence(Chiyoko.worldName, Chiyoko.seed, vault.getRngCopy(), vault.key)
         VaultInteractionState.pendingVaults.add(PendingVault(pos.immutable(), predictedItems, vault))

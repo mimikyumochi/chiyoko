@@ -7,17 +7,13 @@ import lgbt.faith.chiyoko.functions.EnchantFunctions
 import lgbt.faith.chiyoko.functions.Enchantability
 import lgbt.faith.chiyoko.functions.EnchantmentCracker
 import lgbt.faith.chiyoko.rand.Rand
-import lgbt.faith.chiyoko.sendOverlay
 import net.minecraft.ChatFormatting
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen
 import net.minecraft.client.gui.screens.inventory.EnchantmentScreen
-import net.minecraft.client.model.geom.ModelLayers
-import net.minecraft.client.model.`object`.book.BookModel
 import net.minecraft.network.chat.CommonComponents
 import net.minecraft.network.chat.Component
-import net.minecraft.world.entity.player.Player
 import net.minecraft.world.inventory.AbstractContainerMenu
 import net.minecraft.world.inventory.EnchantmentMenu
 import net.minecraft.world.item.Items
@@ -27,7 +23,6 @@ import org.spongepowered.asm.mixin.gen.Accessor
 import org.spongepowered.asm.mixin.injection.At
 import org.spongepowered.asm.mixin.injection.Inject
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable
 import org.spongepowered.asm.mixin.injection.callback.LocalCapture
 import java.util.*
 

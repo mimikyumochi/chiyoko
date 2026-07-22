@@ -9,7 +9,7 @@ class Xoroshiro128PlusPlus(var seedLo: Long, var seedHi: Long) {
     fun toState() = State(seedLo, seedHi)
 
     fun nextLong(): Long {
-        var s0 = seedLo
+        val s0 = seedLo
         var s1 = seedHi
 
         val result = java.lang.Long.rotateLeft(s0 + s1, 17) + s0

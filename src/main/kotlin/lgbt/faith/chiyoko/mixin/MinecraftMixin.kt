@@ -2,14 +2,10 @@ package lgbt.faith.chiyoko.mixin
 
 import lgbt.faith.chiyoko.*
 import lgbt.faith.chiyoko.config.RollType
-import lgbt.faith.chiyoko.functions.EnchantFunctions
-import lgbt.faith.chiyoko.functions.Enchantment
 import lgbt.faith.chiyoko.rand.Xoroshiro128PlusPlus
 import lgbt.faith.chiyoko.sequences.*
 import net.minecraft.client.Minecraft
 import net.minecraft.client.multiplayer.ClientLevel
-import net.minecraft.network.chat.Component
-import net.minecraft.world.entity.HumanoidArm
 import net.minecraft.world.entity.monster.piglin.Piglin
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
@@ -62,7 +58,7 @@ class MinecraftMixin {
 //            EnchantFunctions.logRegistryOrderForHeldItem()
 //        }
 
-        processVaults(mc, level)
+        processVaults(level)
         scanEntities(level)
         routeNewItemEntities(level)
         processGravels()
@@ -83,7 +79,7 @@ class MinecraftMixin {
         }
     }
 
-    private fun processVaults(mc: Minecraft, level: ClientLevel) {
+    private fun processVaults(level: ClientLevel) {
         if (VaultInteractionState.pendingVaults.isEmpty()) return
         val snapshot = VaultInteractionState.pendingVaults.toList()
         VaultInteractionState.pendingVaults.clear()
@@ -413,13 +409,13 @@ class MinecraftMixin {
         val actual = p.collectedItems.first()
 
         // avoid potential misroutes which will cause the game to hang as it infinitely writes to the config file for desyncs.
-        val isFishDrop = fishing.fishTable().any { it.item.item == actual.item } ||
-                         fishing.junkTable(true).any { it.item.item == actual.item } ||
-                         fishing.treasureTable().any { it.item.item == actual.item }
+        val isFishDrop = Fishing.fishTable().any { it.item.item == actual.item } ||
+                         Fishing.junkTable(true).any { it.item.item == actual.item } ||
+                         Fishing.treasureTable().any { it.item.item == actual.item }
 
         if (!isFishDrop) return
 
-        var predicted = fishing.roll(1, p.luck, p.isOpenWater, p.isJungle)
+        val predicted = fishing.peek(1, p.luck, p.isOpenWater, p.isJungle)
         fishing.advance(1, p.luck, p.isOpenWater, p.isJungle)
         Chiyoko.configManager.updateSequence(Chiyoko.worldName, Chiyoko.seed, fishing.getRngCopy(), fishing.key)
 
@@ -456,7 +452,7 @@ class MinecraftMixin {
     private fun tryMatchCatchSequence(fishing: Fishing, catchList: List<ItemStack>, p: PendingFishingReel): Int? {
         val snapshot = fishing.getRngCopy()
         for (expected in catchList) {
-            val pred = fishing.roll(1, p.luck, p.isOpenWater, p.isJungle)
+            val pred = fishing.peek(1, p.luck, p.isOpenWater, p.isJungle)
 
             if (expected.item != pred.first().item) {
                 fishing.loadState(snapshot.seedLo, snapshot.seedHi)

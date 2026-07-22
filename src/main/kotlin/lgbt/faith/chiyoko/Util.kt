@@ -66,7 +66,7 @@ fun handleVaultDesync(actual: ItemStack, isOminous: Boolean) {
     var advances = 0L
     val maxAdvances = 1000
     do {
-        val predicted = vault.roll(1)
+        val predicted = vault.peek(1)
         vault.advance(1)
         advances++
     } while((predicted.lastOrNull()?.item != actual.item ||

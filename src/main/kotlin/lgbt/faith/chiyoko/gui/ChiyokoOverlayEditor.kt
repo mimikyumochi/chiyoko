@@ -26,7 +26,6 @@ import kotlin.math.min
 class ChiyokoOverlayEditor : Screen(Component.literal("chiyoko overlay editor")) {
 
     private val configManager = Chiyoko.configManager
-    private val worldName = Chiyoko.worldName
 
     private lateinit var list: OverlayList
     private val tabButtons = mutableListOf<Pair<String, Button>>()
@@ -138,18 +137,18 @@ class ChiyokoOverlayEditor : Screen(Component.literal("chiyoko overlay editor"))
             val sequenceType = Chiyoko.sequences.map[key]
 
             list.addEntry(OverlayList.UntrackEntry(key, configManager, this))
-            list.addEntry(OverlayList.VisibleEntry(key, overlay, configManager, worldName))
-            list.addEntry(OverlayList.RotationEntry(key, overlay, configManager, worldName))
-            list.addEntry(OverlayList.ReversedEntry(key, overlay, configManager, worldName))
+            list.addEntry(OverlayList.VisibleEntry(key, overlay, configManager))
+            list.addEntry(OverlayList.RotationEntry(key, overlay, configManager))
+            list.addEntry(OverlayList.ReversedEntry(key, overlay, configManager))
 
             if (sequenceType is WitherSkeleton || sequenceType is Shulker) {
-                list.addEntry(OverlayList.RollTypeEntry(key, overlay, configManager, worldName))
+                list.addEntry(OverlayList.RollTypeEntry(key, overlay, configManager))
             }
             if (sequenceType is Fishing || sequenceType is PiglinBartering || sequenceType is Gravel || sequenceType is Vault) {
-                list.addEntry(OverlayList.AdvancesEntry(key, overlay, configManager, worldName, font, list))
+                list.addEntry(OverlayList.AdvancesEntry(key, overlay, configManager, font))
             }
             if (sequenceType is Vault) {
-                list.addEntry(OverlayList.SplitEntry(key, overlay, configManager, worldName))
+                list.addEntry(OverlayList.SplitEntry(key, overlay, configManager))
             }
         } else {
             list.addEntry(OverlayList.InfoEntry("no trackers active. click '+' above to add one!"))
@@ -262,26 +261,6 @@ class OverlayList(mc: Minecraft, width: Int, height: Int, y0: Int, itemHeight: I
         return super.addEntry(entry)
     }
 
-    class AddTrackerEntry(val key: String, val configManager: ChiyokoConfigManager, val editor: ChiyokoOverlayEditor) : Entry() {
-        private var _focused = false
-        private val button = Button.builder(Component.literal("track").withStyle(ChatFormatting.GREEN)) {
-            configManager.config.updateOverlay(key) { tracked = true }
-            editor.selectedKey = key
-            editor.refreshUI()
-        }.bounds(0, 0, 150, 20).build()
-
-        override fun extractContent(graphics: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, hovered: Boolean, a: Float) {
-            val mc = Minecraft.getInstance()
-            graphics.text(mc.font, key.replace("minecraft:", ""), contentX, contentYMiddle - mc.font.lineHeight / 2, 0xFFFFFFFF.toInt())
-            button.setPosition(contentRight - 150, contentY)
-            button.extractRenderState(graphics, mouseX, mouseY, a)
-        }
-        override fun children(): List<GuiEventListener> = listOf(button)
-        override fun narratables(): List<NarratableEntry> = listOf(button)
-        override fun setFocused(focused: Boolean) {_focused = focused}
-        override fun isFocused(): Boolean {return _focused}
-    }
-
     class UntrackEntry(val key: String, val configManager: ChiyokoConfigManager, val editor: ChiyokoOverlayEditor) : Entry() {
         private var _focused = false
         private val button = Button.builder(Component.literal("untrack").withStyle(ChatFormatting.RED)) {
@@ -314,7 +293,7 @@ class OverlayList(mc: Minecraft, width: Int, height: Int, y0: Int, itemHeight: I
         override fun isFocused(): Boolean = false
     }
 
-    class VisibleEntry(val key: String, val overlay: OverlayConfig, val configManager: ChiyokoConfigManager, val worldName: String) : Entry() {
+    class VisibleEntry(val key: String, val overlay: OverlayConfig, val configManager: ChiyokoConfigManager) : Entry() {
         private var _focused = false
 
         private val button = Button.builder(visibleLabel()) {
@@ -344,7 +323,7 @@ class OverlayList(mc: Minecraft, width: Int, height: Int, y0: Int, itemHeight: I
         override fun isFocused(): Boolean {return _focused}
     }
 
-    class RotationEntry(val key: String, val overlay: OverlayConfig, val configManager: ChiyokoConfigManager, val worldName: String) : Entry() {
+    class RotationEntry(val key: String, val overlay: OverlayConfig, val configManager: ChiyokoConfigManager) : Entry() {
         private var _focused = false
 
         private val button = Button.builder(rotationLabel()) {
@@ -376,7 +355,7 @@ class OverlayList(mc: Minecraft, width: Int, height: Int, y0: Int, itemHeight: I
         override fun isFocused(): Boolean {return _focused}
     }
 
-    class ReversedEntry(val key: String, val overlay: OverlayConfig, val configManager: ChiyokoConfigManager, val worldName: String) : Entry() {
+    class ReversedEntry(val key: String, val overlay: OverlayConfig, val configManager: ChiyokoConfigManager) : Entry() {
         private var _focused = false
 
         private val button = Button.builder(reversedLabel()) {
@@ -406,7 +385,7 @@ class OverlayList(mc: Minecraft, width: Int, height: Int, y0: Int, itemHeight: I
         override fun isFocused(): Boolean {return _focused}
     }
 
-    class RollTypeEntry(val key: String, val overlay: OverlayConfig, val configManager: ChiyokoConfigManager, val worldName: String) : Entry() {
+    class RollTypeEntry(val key: String, val overlay: OverlayConfig, val configManager: ChiyokoConfigManager) : Entry() {
         private var _focused = false
 
         private val button = Button.builder(rollTypeLabel()) {
@@ -437,9 +416,7 @@ class OverlayList(mc: Minecraft, width: Int, height: Int, y0: Int, itemHeight: I
         private val key: String,
         private val overlay: OverlayConfig,
         private val configManager: ChiyokoConfigManager,
-        private val worldName: String,
-        private val font: Font,
-        private val list: OverlayList
+        font: Font
     ) : Entry() {
         private var _focused = false
         private val editBox = EditBox(font, 0, 0, 150, 20, Component.literal("advances")).also {
@@ -468,7 +445,7 @@ class OverlayList(mc: Minecraft, width: Int, height: Int, y0: Int, itemHeight: I
         override fun isFocused(): Boolean {return _focused}
     }
 
-    class SplitEntry(val key: String, val overlay: OverlayConfig, val configManager: ChiyokoConfigManager, val worldName: String) : Entry() {
+    class SplitEntry(val key: String, val overlay: OverlayConfig, val configManager: ChiyokoConfigManager) : Entry() {
         private var _focused = false
 
         private val button = Button.builder(splitLabel()) {
