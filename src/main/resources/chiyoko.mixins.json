@@ -14,8 +14,8 @@
     "MinecraftMixin",
     "LevelMixin",
     "EnchantmentScreenMixin",
-    "EnchantmentMenuMixin",
-    "AbstractContainerScreenAccessor"
+    "AbstractContainerScreenAccessor",
+    "AbstractContainerMenuMixin"
   ],
   "injectors": {
     "defaultRequire": 1

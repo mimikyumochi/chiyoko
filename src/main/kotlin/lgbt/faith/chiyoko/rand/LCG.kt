@@ -1,10 +1,12 @@
 package lgbt.faith.chiyoko.rand
 
-class Rand(var seed: Long = 0) {
+class LCG(var seed: Long = 0) {
 
     private val multiplier = 0x5DEECE66DL
     private val addend = 0xBL
     private val mask = (1L shl 48) - 1
+
+    fun copy() = LCG(seed)
 
     fun next(bits: Int): Int {
         seed = (seed * multiplier + addend) and mask

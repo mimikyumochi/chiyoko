@@ -1,7 +1,7 @@
 package lgbt.faith.chiyoko.functions
 
 import lgbt.faith.chiyoko.functions.EligibleEnchantments.LEGACY_REGISTRY_ORDER
-import lgbt.faith.chiyoko.rand.Rand
+import lgbt.faith.chiyoko.rand.LCG
 import lgbt.faith.chiyoko.rand.Xoroshiro128PlusPlus
 import lgbt.faith.chiyoko.sendOverlay
 import net.minecraft.client.Minecraft
@@ -13,6 +13,23 @@ import net.minecraft.world.item.enchantment.Enchantment as MinecraftEnchantment
 import net.minecraft.world.item.enchantment.EnchantmentInstance as MinecraftEnchantmentInstance
 
 object EnchantFunctions {
+
+    fun getSimulatedCost(rand: LCG, slot: Int, bookshelves: Int, enchantability: Int): Int {
+        if (enchantability <= 0) return 0
+        val b = if (bookshelves > 15) 15 else bookshelves
+        val baseCost = rand.nextInt(8) + 1 + (b shr 1) + rand.nextInt(b + 1)
+
+        var finalCost = when (slot) {
+            0 -> maxOf(baseCost / 3, 1)
+            1 -> (baseCost * 2) / 3 + 1
+            else -> maxOf(baseCost, b * 2)
+        }
+
+        if (finalCost < slot + 1) {
+            finalCost = 0
+        }
+        return finalCost
+    }
 
     fun enchantmentIdentifierToHolder(id: String): Holder<MinecraftEnchantment>? {
         val mc = Minecraft.getInstance()
@@ -53,7 +70,7 @@ object EnchantFunctions {
     fun enchantRandomly(rng: Xoroshiro128PlusPlus, options: List<String>) =
         enchantRandomlyCore(rng::nextInt, options)
 
-    fun enchantRandomly(rng: Rand, options: List<String>) =
+    fun enchantRandomly(rng: LCG, options: List<String>) =
         enchantRandomlyCore(rng::nextInt, options)
 
 
@@ -87,7 +104,7 @@ object EnchantFunctions {
     fun enchantWithLevels(rng: Xoroshiro128PlusPlus, enchantability: Int, eligibleIds: Set<String>, baseCost: Int = 30, legacyOrder: Boolean = false)
         = enchantWithLevelsCore(rng::nextInt, rng::nextFloat, enchantability, eligibleIds, baseCost, legacyOrder)
 
-    fun enchantWithLevels(rng: Rand, enchantability: Int, eligibleIds: Set<String>, baseCost: Int = 30, legacyOrder: Boolean = true)
+    fun enchantWithLevels(rng: LCG, enchantability: Int, eligibleIds: Set<String>, baseCost: Int = 30, legacyOrder: Boolean = true)
         = enchantWithLevelsCore(rng::nextInt, rng::nextFloat, enchantability, eligibleIds, baseCost, legacyOrder)
 
 
